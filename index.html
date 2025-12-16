@@ -157,24 +157,38 @@
 
                 <div v-else class="grid gap-6">
                     <div v-for="(cmd, index) in filteredCommandments" :key="index" class="cmd-card">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="px-2 py-1 bg-gold/10 border border-gold/30 rounded text-xs text-gold font-bold">Mitzvá #{{ cmd.id }}</span>
-                            <span v-if="cmd.type" :class="cmd.type === 'Positivo' ? 'text-green-400' : 'text-red-400'" class="text-xs font-uppercase tracking-wider border border-current px-2 py-0.5 rounded">{{ cmd.type }}</span>
-                        </div>
-                        <h3 class="text-xl font-semibold mb-3 text-gray-100">{{ cmd.description }}</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div class="bg-gray-800/50 p-3 rounded border-l-2 border-blue-500">
-                                <p class="text-gray-400 text-xs mb-1 uppercase">Torah / Fonte</p>
-                                <p>{{ cmd.source || 'Referência não informada' }}</p>
+                        <!-- Reference Section (Metadata) -->
+                        <div class="flex flex-wrap gap-x-6 gap-y-2 mb-4 border-b border-gray-700 pb-3 items-center text-sm">
+                            <div class="flex items-center">
+                                <span class="text-gray-500 mr-2 uppercase text-xs tracking-wider">N° Mandamento:</span>
+                                <span class="text-gold font-bold text-lg">{{ cmd.id }}</span>
                             </div>
-                            <div class="bg-gray-800/50 p-3 rounded border-l-2 border-green-500">
-                                <p class="text-gray-400 text-xs mb-1 uppercase">Novo Testamento</p>
-                                <p>{{ cmd.nt_confirmation || 'Em análise' }}</p>
+                            <div class="flex items-center">
+                                <span class="text-gray-500 mr-2 uppercase text-xs tracking-wider">Rambam:</span>
+                                <span class="text-gray-300 font-mono">{{ cmd.rambam }}</span>
+                            </div>
+                            <div class="flex items-center px-2 py-0.5 rounded border border-gray-700 bg-gray-900/50">
+                                <span :class="isPositive(cmd.mp) ? 'text-green-400' : 'text-red-400'" class="font-bold uppercase tracking-wide">{{ cmd.mp }}</span>
+                            </div>
+                            <div class="flex items-center space-x-4 ml-auto sm:ml-0">
+                                <span v-if="cmd.an !== '-'" class="text-blue-300" title="Vigência"><i class="fa-regular fa-calendar-check mr-1"></i> {{ cmd.an }}</span>
+                                <span v-if="cmd.quem !== '-'" class="text-purple-300" title="Quem"><i class="fa-solid fa-user-group mr-1"></i> {{ cmd.quem }}</span>
+                                <span v-if="cmd.onde !== '-'" class="text-orange-300" title="Onde"><i class="fa-solid fa-location-dot mr-1"></i> {{ cmd.onde }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Content Boxes (Dynamic) -->
+                        <div class="grid grid-cols-1 gap-4">
+                            <div v-for="field in cmd.content" :key="field.label" class="glass-panel p-4 bg-gray-800/30">
+                                <h4 class="text-xs text-gold uppercase tracking-widest mb-2 font-bold">{{ field.label }}</h4>
+                                <div class="text-gray-200 min-h-[1.5rem] whitespace-pre-wrap leading-relaxed">{{ field.value }}</div>
                             </div>
                         </div>
                     </div>
-                    <div v-if="filteredCommandments.length === 0" class="text-center py-10 text-gray-500">
-                        Nenhum mandamento encontrado para este filtro na base de dados atual.
+                    
+                    <div v-if="filteredCommandments.length === 0" class="text-center py-10 text-gray-500 glass-panel">
+                        <p>Nenhum mandamento encontrado para este filtro na base de dados atual.</p>
+                        <p class="text-sm mt-2">Verifique se a planilha possui as colunas 'Bloco' ou 'Tomo' preenchidas.</p>
                     </div>
                 </div>
             </div>
