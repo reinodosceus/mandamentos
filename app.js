@@ -9,12 +9,13 @@ createApp({
         const selectedFilter = ref('');
         const commandments = ref([]);
         const loading = ref(false);
+        const errorMsg = ref('');
         const blogPosts = ref([]);
         const blogLoading = ref(false);
 
         // Configuration
-        // New CSV URL from the published sheet
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4q3ANfmKZp4gG5NDG9LaY2l4d3o5-bKH5akeg2uBPd1MgKRQjCc0JW6DgFLYWJV0mfCIzolq4hqe/pub?output=csv';
+        // Added parameters to ensure single sheet CSV export
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4q3ANfmKZp4gG5NDG9LaY2l4d3o5-bKH5akeg2uBPd1MgKRQjCc0JW6DgFLYWJV0mfCIzolq4hqe/pub?output=csv&gid=0&single=true';
         
         const RSS_URL = 'https://livrodosmandamentos.blogspot.com/feeds/posts/default?alt=rss'; 
         const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
@@ -82,6 +83,7 @@ createApp({
             if (!selectedFilter.value) return [];
             return commandments.value.filter(cmd => {
                 const target = activeMode.value === 'blocos' ? cmd.block : cmd.tomo;
+                // Robust filter checking even if field is missing
                 return target && target.toLowerCase().includes(selectedFilter.value.toLowerCase());
             });
         });
@@ -105,77 +107,99 @@ createApp({
         // Data Fetching
         async function fetchData() {
             loading.value = true;
+            errorMsg.value = '';
+            
             try {
-                Papa.parse(CSV_URL, {
-                    download: true,
+                // Fetch text first to handle errors better
+                const response = await fetch(CSV_URL + '&t=' + Date.now()); // timestamp to prevent caching
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+                
+                const csvText = await response.text();
+                
+                Papa.parse(csvText, {
                     header: true,
+                    skipEmptyLines: true,
                     complete: function(results) {
-                        commandments.value = results.data.map(row => {
-                            // Normalize keys for easier finding
-                            const keys = Object.keys(row);
-                            const normalize = k => k.trim().toLowerCase();
-                            const getVal = (candidates) => {
-                                const key = keys.find(k => candidates.includes(normalize(k)));
-                                return key ? row[key] : '';
-                            };
-
-                            // Map specific reference columns
-                            const id = getVal(['n° do mandamento', 'id', 'numero', 'nº do mandamento']);
-                            const rambam = getVal(['nº', 'rambam', 'numero rambam', 'nº rambam']);
-                            const mp = getVal(['m/p', 'tipo', 'p/n']);
-                            const an = getVal(['a/n', 'atual', 'vigente']);
-                            const quem = getVal(['quem', 'sujeito', 'pessoa']);
-                            const onde = getVal(['onde', 'lugar', 'local']);
-                            
-                            // Filter columns (Metadata for Logic)
-                            const block = getVal(['bloco', 'categoria', 'assunto', 'tema']);
-                            const tomo = getVal(['tomo', 'livro', 'seção']);
-
-                            // Content columns (Everything else goes into boxes)
-                            // We exclude the keys we already mapped to Metadata or Filters
-                            const metaKeys = [
-                                'n° do mandamento', 'id', 'numero', 'nº do mandamento',
-                                'nº', 'rambam', 'numero rambam', 'nº rambam',
-                                'm/p', 'tipo', 'p/n',
-                                'a/n', 'atual', 'vigente',
-                                'quem', 'sujeito', 'pessoa',
-                                'onde', 'lugar', 'local',
-                                'bloco', 'categoria', 'assunto', 'tema',
-                                'tomo', 'livro', 'seção'
-                            ];
-
-                            const content = keys
-                                .filter(k => !metaKeys.includes(normalize(k)))
-                                .map(k => ({
-                                    label: k,
-                                    value: row[k]
-                                }));
-
-                            return {
-                                id: id || '?',
-                                rambam: rambam || '-',
-                                mp: mp || '-',
-                                an: an || '-',
-                                quem: quem || '-',
-                                onde: onde || '-',
-                                block: block || '',
-                                tomo: tomo || '',
-                                content: content,
-                                type: mp // For chart compatibility
-                            };
-                        });
+                        if (results.data && results.data.length > 0) {
+                            processData(results.data);
+                        } else {
+                            errorMsg.value = 'A planilha retornou vazia. Verifique a publicação no Google Sheets.';
+                        }
                         loading.value = false;
-                        if (currentView.value === 'graficos') renderCharts();
                     },
                     error: function(err) {
-                        console.error("Erro CSV:", err);
+                        console.error("Erro CSV Parse:", err);
+                        errorMsg.value = 'Erro ao processar dados da planilha: ' + err.message;
                         loading.value = false;
                     }
                 });
             } catch (error) {
                 console.error("Erro Fetch:", error);
+                errorMsg.value = 'Falha na conexão com a planilha. ' + error.message;
                 loading.value = false;
             }
+        }
+
+        function processData(data) {
+            commandments.value = data.map(row => {
+                // Normalize keys for easier finding
+                const keys = Object.keys(row);
+                const normalize = k => k ? k.trim().toLowerCase() : '';
+                
+                const getVal = (candidates) => {
+                    const key = keys.find(k => candidates.includes(normalize(k)));
+                    return key ? row[key] : '';
+                };
+
+                // Map specific reference columns based on user request
+                const id = getVal(['n° do mandamento', 'id', 'numero', 'nº do mandamento', 'mandamento']);
+                const rambam = getVal(['nº', 'rambam', 'numero rambam', 'nº rambam', 'ramban']);
+                const mp = getVal(['m/p', 'tipo', 'p/n', 'modo']);
+                const an = getVal(['a/n', 'atual', 'vigente', 'an']);
+                const quem = getVal(['quem', 'sujeito', 'pessoa']);
+                const onde = getVal(['onde', 'lugar', 'local']);
+                
+                // Filter columns (Metadata for Logic)
+                const block = getVal(['bloco', 'categoria', 'assunto', 'tema']);
+                const tomo = getVal(['tomo', 'livro', 'seção', 'secao']);
+
+                // Content columns (Everything else goes into boxes)
+                const metaKeys = [
+                    'n° do mandamento', 'id', 'numero', 'nº do mandamento', 'mandamento',
+                    'nº', 'rambam', 'numero rambam', 'nº rambam', 'ramban',
+                    'm/p', 'tipo', 'p/n', 'modo',
+                    'a/n', 'atual', 'vigente', 'an',
+                    'quem', 'sujeito', 'pessoa',
+                    'onde', 'lugar', 'local',
+                    'bloco', 'categoria', 'assunto', 'tema',
+                    'tomo', 'livro', 'seção', 'secao'
+                ];
+
+                const content = keys
+                    .filter(k => !metaKeys.includes(normalize(k)))
+                    .map(k => ({
+                        label: k,
+                        value: row[k] // Value keeps original formatting, even if empty
+                    }));
+
+                return {
+                    id: id || '?',
+                    rambam: rambam || '-',
+                    mp: mp || '-',
+                    an: an || '-',
+                    quem: quem || '-',
+                    onde: onde || '-',
+                    block: block || '',
+                    tomo: tomo || '',
+                    content: content,
+                    type: mp
+                };
+            });
+            
+            if (currentView.value === 'graficos') renderCharts();
         }
 
         // Blog Fetching
@@ -261,13 +285,13 @@ createApp({
 
         watch(currentView, (newVal) => {
             if (newVal === 'graficos') {
-                if (commandments.value.length === 0) fetchData();
+                if (commandments.value.length === 0 && !loading.value) fetchData();
                 else renderCharts();
             }
             if (newVal === 'blog' && blogPosts.value.length === 0) {
                 fetchBlog();
             }
-            if (newVal === 'lista' && commandments.value.length === 0) {
+            if (newVal === 'lista' && commandments.value.length === 0 && !loading.value) {
                 fetchData();
             }
         });
@@ -286,6 +310,8 @@ createApp({
             selectedFilter,
             filteredCommandments,
             loading,
+            errorMsg,
+            fetchData,
             blogPosts,
             blogLoading,
             isPositive

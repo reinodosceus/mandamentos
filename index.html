@@ -150,11 +150,20 @@
                     </div>
                 </div>
 
+                <!-- Loading State -->
                 <div v-if="loading" class="text-center py-20">
                     <i class="fa-solid fa-circle-notch fa-spin text-4xl text-gold"></i>
                     <p class="mt-4">Carregando dados da nuvem...</p>
                 </div>
 
+                <!-- Error State -->
+                <div v-if="errorMsg" class="text-center py-10 text-red-400 glass-panel border border-red-500/30 mx-auto max-w-2xl">
+                    <i class="fa-solid fa-triangle-exclamation text-4xl mb-4"></i>
+                    <p>{{ errorMsg }}</p>
+                    <button @click="fetchData" class="mt-4 px-4 py-2 border border-red-400 hover:bg-red-400/20 rounded transition">Tentar Novamente</button>
+                </div>
+
+                <!-- Data List -->
                 <div v-else class="grid gap-6">
                     <div v-for="(cmd, index) in filteredCommandments" :key="index" class="cmd-card">
                         <!-- Reference Section (Metadata) -->
@@ -186,9 +195,9 @@
                         </div>
                     </div>
                     
-                    <div v-if="filteredCommandments.length === 0" class="text-center py-10 text-gray-500 glass-panel">
+                    <div v-if="!loading && !errorMsg && filteredCommandments.length === 0" class="text-center py-10 text-gray-500 glass-panel">
                         <p>Nenhum mandamento encontrado para este filtro na base de dados atual.</p>
-                        <p class="text-sm mt-2">Verifique se a planilha possui as colunas 'Bloco' ou 'Tomo' preenchidas.</p>
+                        <p class="text-sm mt-2">Verifique se a planilha possui as colunas 'Bloco' ou 'Tomo' preenchidas corretamente.</p>
                     </div>
                 </div>
             </div>
