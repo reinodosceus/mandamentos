@@ -14,8 +14,8 @@ createApp({
         const blogLoading = ref(false);
 
         // Configuration
-        // Added parameters to ensure single sheet CSV export
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4q3ANfmKZp4gG5NDG9LaY2l4d3o5-bKH5akeg2uBPd1MgKRQjCc0JW6DgFLYWJV0mfCIzolq4hqe/pub?output=csv&gid=0&single=true';
+        // Updated URL to fix HTTP 400 error by using standard CSV export endpoint
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4q3ANfmKZp4gG5NDG9LaY2l4d3o5-bKH5akeg2uBPd1MgKRQjCc0JW6DgFLYWJV0mfCIzolq4hqe/pub?output=csv';
         
         const RSS_URL = 'https://livrodosmandamentos.blogspot.com/feeds/posts/default?alt=rss'; 
         const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
