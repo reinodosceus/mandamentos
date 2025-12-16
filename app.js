@@ -13,11 +13,9 @@ createApp({
         const blogLoading = ref(false);
 
         // Configuration
-        // URL converted to export format for CSV parsing
-        const SHEET_ID = '1ZPIaNTfnEdN5hWbLppUpafr8YIbM8G6WGGHcWUKVs3s';
-        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+        // New CSV URL from the published sheet
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4q3ANfmKZp4gG5NDG9LaY2l4d3o5-bKH5akeg2uBPd1MgKRQjCc0JW6DgFLYWJV0mfCIzolq4hqe/pub?output=csv';
         
-        // RSS URL updated to user's blog
         const RSS_URL = 'https://livrodosmandamentos.blogspot.com/feeds/posts/default?alt=rss'; 
         const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
@@ -82,12 +80,8 @@ createApp({
 
         const filteredCommandments = computed(() => {
             if (!selectedFilter.value) return [];
-            // Filter logic matches the Sheet column content
-            // Assuming the sheet has columns roughly like: ID, Commandment, Block, Tomo, Source, NT
-            // Since we parse dynamically, we look for matches in the object properties
             return commandments.value.filter(cmd => {
                 const target = activeMode.value === 'blocos' ? cmd.block : cmd.tomo;
-                // Simple string inclusion check, case insensitive
                 return target && target.toLowerCase().includes(selectedFilter.value.toLowerCase());
             });
         });
@@ -102,6 +96,12 @@ createApp({
             currentView.value = 'lista';
         }
 
+        function isPositive(mpValue) {
+            if (!mpValue) return true;
+            const v = mpValue.toLowerCase();
+            return v.includes('positivo') || v === 'p' || v.includes('obrigação');
+        }
+
         // Data Fetching
         async function fetchData() {
             loading.value = true;
@@ -110,21 +110,58 @@ createApp({
                     download: true,
                     header: true,
                     complete: function(results) {
-                        // Transform raw CSV data to clean object
-                        // This mapping depends on the exact header names in the Google Sheet.
-                        // Here we attempt a robust loose mapping based on keywords
                         commandments.value = results.data.map(row => {
-                            // Helper to find key containing string
-                            const getKey = (k) => Object.keys(row).find(key => key.toLowerCase().includes(k));
+                            // Normalize keys for easier finding
+                            const keys = Object.keys(row);
+                            const normalize = k => k.trim().toLowerCase();
+                            const getVal = (candidates) => {
+                                const key = keys.find(k => candidates.includes(normalize(k)));
+                                return key ? row[key] : '';
+                            };
+
+                            // Map specific reference columns
+                            const id = getVal(['n° do mandamento', 'id', 'numero', 'nº do mandamento']);
+                            const rambam = getVal(['nº', 'rambam', 'numero rambam', 'nº rambam']);
+                            const mp = getVal(['m/p', 'tipo', 'p/n']);
+                            const an = getVal(['a/n', 'atual', 'vigente']);
+                            const quem = getVal(['quem', 'sujeito', 'pessoa']);
+                            const onde = getVal(['onde', 'lugar', 'local']);
                             
+                            // Filter columns (Metadata for Logic)
+                            const block = getVal(['bloco', 'categoria', 'assunto', 'tema']);
+                            const tomo = getVal(['tomo', 'livro', 'seção']);
+
+                            // Content columns (Everything else goes into boxes)
+                            // We exclude the keys we already mapped to Metadata or Filters
+                            const metaKeys = [
+                                'n° do mandamento', 'id', 'numero', 'nº do mandamento',
+                                'nº', 'rambam', 'numero rambam', 'nº rambam',
+                                'm/p', 'tipo', 'p/n',
+                                'a/n', 'atual', 'vigente',
+                                'quem', 'sujeito', 'pessoa',
+                                'onde', 'lugar', 'local',
+                                'bloco', 'categoria', 'assunto', 'tema',
+                                'tomo', 'livro', 'seção'
+                            ];
+
+                            const content = keys
+                                .filter(k => !metaKeys.includes(normalize(k)))
+                                .map(k => ({
+                                    label: k,
+                                    value: row[k]
+                                }));
+
                             return {
-                                id: row[getKey('id') || getKey('número') || 'id'] || '0',
-                                description: row[getKey('mandamento') || getKey('descrição') || 'mandamento'] || 'Descrição indisponível',
-                                block: row[getKey('bloco') || getKey('categoria') || 'bloco'] || '',
-                                tomo: row[getKey('tomo') || getKey('livro') || 'tomo'] || '',
-                                source: row[getKey('origem') || getKey('referência') || 'versículo'] || '',
-                                nt_confirmation: row[getKey('novo') || getKey('confirmação') || 'nt'] || '',
-                                type: row[getKey('tipo') || 'tipo'] || 'Geral' // Positivo/Negativo if exists
+                                id: id || '?',
+                                rambam: rambam || '-',
+                                mp: mp || '-',
+                                an: an || '-',
+                                quem: quem || '-',
+                                onde: onde || '-',
+                                block: block || '',
+                                tomo: tomo || '',
+                                content: content,
+                                type: mp // For chart compatibility
                             };
                         });
                         loading.value = false;
@@ -145,7 +182,6 @@ createApp({
         async function fetchBlog() {
             blogLoading.value = true;
             try {
-                // Note: Direct RSS fetch is blocked by CORS, so we use rss2json
                 const response = await fetch(RSS2JSON_API + encodeURIComponent(RSS_URL));
                 const data = await response.json();
                 if (data.status === 'ok') {
@@ -163,23 +199,18 @@ createApp({
         let chartInstance2 = null;
 
         function renderCharts() {
-            // Wait for DOM update
             setTimeout(() => {
                 const ctx1 = document.getElementById('chartType');
                 const ctx2 = document.getElementById('chartTomos');
 
                 if (!ctx1 || !ctx2) return;
 
-                // Destroy old charts if exist
                 if (chartInstance1) chartInstance1.destroy();
                 if (chartInstance2) chartInstance2.destroy();
 
-                // Data Calc
-                // Mocking distribution for demo if data is missing 'type' column
-                const posCount = commandments.value.filter(c => c.type && c.type.toLowerCase().includes('pos')).length || 248;
-                const negCount = commandments.value.filter(c => c.type && c.type.toLowerCase().includes('neg')).length || 365;
+                const posCount = commandments.value.filter(c => isPositive(c.mp)).length;
+                const negCount = commandments.value.length - posCount;
 
-                // Chart 1: Pie
                 chartInstance1 = new Chart(ctx1, {
                     type: 'doughnut',
                     data: {
@@ -196,15 +227,12 @@ createApp({
                     }
                 });
 
-                // Chart 2: Bar (Top 5 Tomos count - Mock logic for demo if data sparse)
-                // Real logic: count occurrences of 'tomo' in commandments array
                 const tomoCounts = {};
                 commandments.value.forEach(c => {
                     const t = c.tomo || 'Outros';
                     tomoCounts[t] = (tomoCounts[t] || 0) + 1;
                 });
                 
-                // Sort and take top 5
                 const sortedTomos = Object.entries(tomoCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
 
                 chartInstance2 = new Chart(ctx2, {
@@ -231,7 +259,6 @@ createApp({
             }, 100);
         }
 
-        // Watchers
         watch(currentView, (newVal) => {
             if (newVal === 'graficos') {
                 if (commandments.value.length === 0) fetchData();
@@ -246,7 +273,6 @@ createApp({
         });
 
         onMounted(() => {
-            // Pre-load data
             fetchData();
         });
 
@@ -261,7 +287,8 @@ createApp({
             filteredCommandments,
             loading,
             blogPosts,
-            blogLoading
+            blogLoading,
+            isPositive
         };
     }
 }).mount('#app');
