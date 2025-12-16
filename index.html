@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leis de Deus - Os Dez Mandamentos</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #c0392b;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #34495e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-style: italic;
+            opacity: 0.8;
+        }
+
+        main {
+            flex: 1;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .stone-tablets {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-top: 5px solid var(--accent-color);
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        ol {
+            list-style-position: inside;
+            counter-reset: commandments;
+            padding-left: 0;
+        }
+
+        li {
+            list-style: none;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: baseline;
+            transition: background-color 0.3s ease;
+        }
+
+        li:last-child {
+            border-bottom: none;
+        }
+
+        li:hover {
+            background-color: #fcfcfc;
+        }
+
+        li::before {
+            counter-increment: commandments;
+            content: counter(commandments, upper-roman) ".";
+            font-weight: bold;
+            color: var(--accent-color);
+            min-width: 40px;
+            font-family: sans-serif;
+            font-size: 1.2rem;
+        }
+
+        .commandment-text {
+            font-size: 1.2rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            font-family: sans-serif;
+            margin-top: auto;
+        }
+
+        @media (max-width: 600px) {
+            .commandment-text {
+                font-size: 1rem;
+            }
+            
+            header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>As Leis de Deus</h1>
+        <p>Princípios eternos para uma vida de retidão</p>
+    </header>
+
+    <main>
+        <section class="stone-tablets">
+            <div class="intro">
+                <p>Os Dez Mandamentos (Êxodo 20)</p>
+            </div>
+            <ol>
+                <li><span class="commandment-text">Não terás outros deuses diante de mim.</span></li>
+                <li><span class="commandment-text">Não farás para ti imagem de escultura, nem semelhança alguma do que há em cima nos céus, nem embaixo na terra.</span></li>
+                <li><span class="commandment-text">Não tomarás o nome do Senhor teu Deus em vão.</span></li>
+                <li><span class="commandment-text">Lembra-te do dia do sábado, para o santificar.</span></li>
+                <li><span class="commandment-text">Honra a teu pai e a tua mãe, para que se prolonguem os teus dias na terra.</span></li>
+                <li><span class="commandment-text">Não matarás.</span></li>
+                <li><span class="commandment-text">Não adulterarás.</span></li>
+                <li><span class="commandment-text">Não furtarás.</span></li>
+                <li><span class="commandment-text">Não dirás falso testemunho contra o teu próximo.</span></li>
+                <li><span class="commandment-text">Não cobiçarás a casa do teu próximo, nem a mulher do teu próximo, nem coisa alguma que pertença ao teu próximo.</span></li>
+            </ol>
+        </section>
+    </main>
+
+    <footer>
+        <p>Desenvolvido com simplicidade e fé.</p>
+    </footer>
+
+</body>
+</html>
