@@ -1,164 +1,244 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leis de Deus - Os Dez Mandamentos</title>
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --accent-color: #c0392b;
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --text-color: #34495e;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Georgia', 'Times New Roman', serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 2rem 1rem;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        header h1 {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            font-weight: 300;
-            letter-spacing: 2px;
-            margin-bottom: 0.5rem;
-        }
-
-        header p {
-            font-style: italic;
-            opacity: 0.8;
-        }
-
-        main {
-            flex: 1;
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-
-        .stone-tablets {
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            padding: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            border-top: 5px solid var(--accent-color);
-        }
-
-        .intro {
-            text-align: center;
-            margin-bottom: 2rem;
-            font-size: 1.1rem;
-        }
-
-        ol {
-            list-style-position: inside;
-            counter-reset: commandments;
-            padding-left: 0;
-        }
-
-        li {
-            list-style: none;
-            margin-bottom: 1.5rem;
-            padding: 1rem;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: baseline;
-            transition: background-color 0.3s ease;
-        }
-
-        li:last-child {
-            border-bottom: none;
-        }
-
-        li:hover {
-            background-color: #fcfcfc;
-        }
-
-        li::before {
-            counter-increment: commandments;
-            content: counter(commandments, upper-roman) ".";
-            font-weight: bold;
-            color: var(--accent-color);
-            min-width: 40px;
-            font-family: sans-serif;
-            font-size: 1.2rem;
-        }
-
-        .commandment-text {
-            font-size: 1.2rem;
-        }
-
-        footer {
-            text-align: center;
-            padding: 2rem;
-            background-color: #ecf0f1;
-            color: #7f8c8d;
-            font-size: 0.9rem;
-            font-family: sans-serif;
-            margin-top: auto;
-        }
-
-        @media (max-width: 600px) {
-            .commandment-text {
-                font-size: 1rem;
-            }
-            
-            header h1 {
-                font-size: 1.5rem;
-            }
-        }
-    </style>
+    <title>613 Mandamentos | Israel Bíblico & Futuro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Vue.js -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- PapaParse for CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="bg-gray-900 text-gray-100 font-sans antialiased overflow-x-hidden">
+    
+    <div id="app" class="min-h-screen flex flex-col relative">
+        
+        <!-- Background Elements -->
+        <div class="fixed inset-0 z-0 pointer-events-none">
+            <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0f172a] to-[#1e1b4b]"></div>
+            <div class="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+            <div class="star-field"></div>
+        </div>
 
-    <header>
-        <h1>As Leis de Deus</h1>
-        <p>Princípios eternos para uma vida de retidão</p>
-    </header>
-
-    <main>
-        <section class="stone-tablets">
-            <div class="intro">
-                <p>Os Dez Mandamentos (Êxodo 20)</p>
+        <!-- Navigation -->
+        <nav class="fixed w-full z-50 glass-nav border-b border-gold/20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-20">
+                    <div class="flex-shrink-0 cursor-pointer" @click="currentView = 'home'">
+                        <h1 class="font-cinzel text-2xl text-gold font-bold tracking-widest glow-text">
+                            <i class="fa-solid fa-menorah mr-2"></i> MANDAMENTOS
+                        </h1>
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="ml-10 flex items-baseline space-x-8">
+                            <a @click="currentView = 'home'" :class="{'text-gold border-b-2 border-gold': currentView === 'home'}" class="nav-link">Início</a>
+                            <a @click="currentView = 'mandamentos'" :class="{'text-gold border-b-2 border-gold': currentView === 'mandamentos' || currentView === 'lista'}" class="nav-link">Mandamentos</a>
+                            <a @click="currentView = 'graficos'" :class="{'text-gold border-b-2 border-gold': currentView === 'graficos'}" class="nav-link">Gráficos</a>
+                            <a @click="currentView = 'blog'" :class="{'text-gold border-b-2 border-gold': currentView === 'blog'}" class="nav-link">Blog</a>
+                        </div>
+                    </div>
+                    <!-- Mobile menu button -->
+                    <div class="md:hidden">
+                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-gold hover:text-white p-2">
+                            <i class="fa-solid fa-bars text-xl"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <ol>
-                <li><span class="commandment-text">Não terás outros deuses diante de mim.</span></li>
-                <li><span class="commandment-text">Não farás para ti imagem de escultura, nem semelhança alguma do que há em cima nos céus, nem embaixo na terra.</span></li>
-                <li><span class="commandment-text">Não tomarás o nome do Senhor teu Deus em vão.</span></li>
-                <li><span class="commandment-text">Lembra-te do dia do sábado, para o santificar.</span></li>
-                <li><span class="commandment-text">Honra a teu pai e a tua mãe, para que se prolonguem os teus dias na terra.</span></li>
-                <li><span class="commandment-text">Não matarás.</span></li>
-                <li><span class="commandment-text">Não adulterarás.</span></li>
-                <li><span class="commandment-text">Não furtarás.</span></li>
-                <li><span class="commandment-text">Não dirás falso testemunho contra o teu próximo.</span></li>
-                <li><span class="commandment-text">Não cobiçarás a casa do teu próximo, nem a mulher do teu próximo, nem coisa alguma que pertença ao teu próximo.</span></li>
-            </ol>
-        </section>
-    </main>
+            <!-- Mobile Menu -->
+            <div v-if="mobileMenuOpen" class="md:hidden glass-dark absolute w-full">
+                <a @click="currentView = 'home'; mobileMenuOpen = false" class="block px-4 py-3 hover:bg-gold/10">Início</a>
+                <a @click="currentView = 'mandamentos'; mobileMenuOpen = false" class="block px-4 py-3 hover:bg-gold/10">Mandamentos</a>
+                <a @click="currentView = 'graficos'; mobileMenuOpen = false" class="block px-4 py-3 hover:bg-gold/10">Gráficos</a>
+                <a @click="currentView = 'blog'; mobileMenuOpen = false" class="block px-4 py-3 hover:bg-gold/10">Blog</a>
+            </div>
+        </nav>
 
-    <footer>
-        <p>Desenvolvido com simplicidade e fé.</p>
-    </footer>
+        <!-- Content Area -->
+        <main class="flex-grow relative z-10 pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+            
+            <!-- HOME VIEW -->
+            <div v-if="currentView === 'home'" class="flex flex-col items-center justify-center min-h-[80vh] text-center">
+                <div class="animate-fade-in-up">
+                    <h2 class="font-cinzel text-5xl md:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-gold via-yellow-200 to-gold mb-6 drop-shadow-lg">
+                        613 MANDAMENTOS
+                    </h2>
+                    <p class="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto mb-10 font-light">
+                        A Eterna Aliança entre o Antigo e o Novo. <br class="hidden md:inline" />
+                        Uma exploração visual e espiritual das 613 Leis do Eterno.
+                    </p>
+                    <button @click="currentView = 'mandamentos'" class="btn-futuristic">
+                        EXPLORAR AS LEIS
+                    </button>
+                </div>
 
+                <div class="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
+                    <div class="feature-card">
+                        <i class="fa-solid fa-scroll text-4xl text-gold mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">Rambam</h3>
+                        <p class="text-sm text-gray-400">Organizado conforme os 14 tomos do Mishneh Torah de Maimônides.</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fa-solid fa-fish text-4xl text-blue-400 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">Novo Testamento</h3>
+                        <p class="text-sm text-gray-400">Correlações e confirmações dos mandamentos nas escrituras messiânicas.</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fa-solid fa-chart-pie text-4xl text-green-400 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">Análise</h3>
+                        <p class="text-sm text-gray-400">Visualize dados e categorias através de gráficos interativos.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MANDAMENTOS SELECTION -->
+            <div v-if="currentView === 'mandamentos'" class="animate-fade-in">
+                <h2 class="section-title">Escolha o Modo de Estudo</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mt-10">
+                    <div @click="selectMode('blocos')" class="selection-card group">
+                        <div class="overlay"></div>
+                        <h3 class="text-3xl font-cinzel text-gold z-10 relative group-hover:scale-110 transition-transform">POR BLOCOS TEMÁTICOS</h3>
+                        <p class="z-10 relative mt-4 text-gray-300">Divisão por assuntos: Família, Leis, Templo, etc.</p>
+                    </div>
+                    <div @click="selectMode('tomos')" class="selection-card group">
+                        <div class="overlay bg-blue-900/50"></div>
+                        <h3 class="text-3xl font-cinzel text-blue-300 z-10 relative group-hover:scale-110 transition-transform">POR TOMOS DE RAMBAM</h3>
+                        <p class="z-10 relative mt-4 text-gray-300">Divisão clássica do Mishneh Torah (14 Livros)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FILTERS GRID (BLOCKS OR TOMOS) -->
+            <div v-if="currentView === 'filtro'" class="animate-fade-in">
+                <div class="flex items-center mb-8">
+                    <button @click="currentView = 'mandamentos'" class="text-gold hover:text-white mr-4"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+                    <h2 class="text-3xl font-cinzel">{{ activeMode === 'blocos' ? 'Temas e Assuntos' : 'Os 14 Tomos de Rambam' }}</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div v-for="item in activeFilterList" :key="item.title" @click="filterCommandments(item.title)" class="filter-card">
+                        <div class="flex items-start justify-between">
+                            <h3 class="font-bold text-lg text-gold">{{ item.title }}</h3>
+                            <i class="fa-solid fa-chevron-right text-xs text-gray-600"></i>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">{{ item.desc }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LISTA DE MANDAMENTOS FILTRADOS -->
+            <div v-if="currentView === 'lista'" class="animate-fade-in">
+                <div class="flex items-center mb-6 justify-between flex-wrap">
+                    <div class="flex items-center">
+                        <button @click="currentView = 'filtro'" class="text-gold hover:text-white mr-4"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+                        <h2 class="text-2xl font-cinzel text-white">{{ selectedFilter }}</h2>
+                    </div>
+                    <div class="text-sm text-gray-400">
+                        Exibindo {{ filteredCommandments.length }} mandamentos
+                    </div>
+                </div>
+
+                <div v-if="loading" class="text-center py-20">
+                    <i class="fa-solid fa-circle-notch fa-spin text-4xl text-gold"></i>
+                    <p class="mt-4">Carregando dados da nuvem...</p>
+                </div>
+
+                <div v-else class="grid gap-6">
+                    <div v-for="(cmd, index) in filteredCommandments" :key="index" class="cmd-card">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="px-2 py-1 bg-gold/10 border border-gold/30 rounded text-xs text-gold font-bold">Mitzvá #{{ cmd.id }}</span>
+                            <span v-if="cmd.type" :class="cmd.type === 'Positivo' ? 'text-green-400' : 'text-red-400'" class="text-xs font-uppercase tracking-wider border border-current px-2 py-0.5 rounded">{{ cmd.type }}</span>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-100">{{ cmd.description }}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div class="bg-gray-800/50 p-3 rounded border-l-2 border-blue-500">
+                                <p class="text-gray-400 text-xs mb-1 uppercase">Torah / Fonte</p>
+                                <p>{{ cmd.source || 'Referência não informada' }}</p>
+                            </div>
+                            <div class="bg-gray-800/50 p-3 rounded border-l-2 border-green-500">
+                                <p class="text-gray-400 text-xs mb-1 uppercase">Novo Testamento</p>
+                                <p>{{ cmd.nt_confirmation || 'Em análise' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="filteredCommandments.length === 0" class="text-center py-10 text-gray-500">
+                        Nenhum mandamento encontrado para este filtro na base de dados atual.
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRAFICOS -->
+            <div v-if="currentView === 'graficos'" class="animate-fade-in">
+                <h2 class="section-title">Análise Estatística</h2>
+                <div v-if="loading" class="text-center py-20">
+                    <i class="fa-solid fa-circle-notch fa-spin text-4xl text-gold"></i>
+                </div>
+                <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                    <div class="chart-container glass-panel p-6">
+                        <h3 class="text-lg font-bold mb-4 text-center text-gold">Positivos vs Negativos</h3>
+                        <canvas id="chartType"></canvas>
+                    </div>
+                    <div class="chart-container glass-panel p-6">
+                        <h3 class="text-lg font-bold mb-4 text-center text-gold">Distribuição por Tomos (Top 5)</h3>
+                        <canvas id="chartTomos"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOG -->
+            <div v-if="currentView === 'blog'" class="animate-fade-in">
+                <h2 class="section-title">Blog de Estudos</h2>
+                <p class="text-center text-gray-400 mb-8">Artigos recentes importados via RSS</p>
+                
+                <div v-if="blogLoading" class="text-center py-20">
+                   <i class="fa-solid fa-rss fa-fade text-4xl text-gold"></i>
+                   <p class="mt-4">Sincronizando feed...</p>
+                </div>
+
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                     <div v-for="post in blogPosts" :key="post.guid" class="blog-card">
+                        <div class="h-40 bg-gray-800 bg-cover bg-center relative" :style="{backgroundImage: 'url(' + (post.thumbnail || 'https://images.unsplash.com/photo-1478641300939-0ec5188d3802?q=80&w=1000&auto=format&fit=crop') + ')'}">
+                            <div class="absolute inset-0 bg-black/40"></div>
+                        </div>
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold mb-2 line-clamp-2 text-gold">{{ post.title }}</h3>
+                            <p class="text-gray-400 text-sm mb-4 line-clamp-3">{{ post.description }}</p>
+                            <a :href="post.link" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm font-bold uppercase tracking-wide">Ler Artigo <i class="fa-solid fa-external-link-alt ml-1"></i></a>
+                        </div>
+                     </div>
+                     <div v-if="blogPosts.length === 0" class="col-span-full text-center p-10 glass-panel">
+                        <p>Não foi possível carregar os posts ou o RSS não foi configurado.</p>
+                        <p class="text-xs mt-2 text-gray-500">Nota: Certifique-se que o Blogspot está público.</p>
+                     </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-auto border-t border-gold/10 bg-black/40 backdrop-blur-md">
+            <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
+                <p class="font-cinzel text-gold text-lg mb-2">MANDAMENTOS - 613</p>
+                <p class="text-gray-500 text-sm">
+                    Desenvolvido por Josias Fernandes. 2025
+                </p>
+            </div>
+        </footer>
+
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
