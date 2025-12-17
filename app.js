@@ -11,15 +11,17 @@ createApp({
         const loading = ref(false);
         const errorMsg = ref('');
         
+        // Detail View State
+        const selectedCommandment = ref(null);
+        
         // Dynamic Filters State
         const availableBlocks = ref([]);
         const availableTomos = ref([]);
 
         // Configuration
-        // URL pointing to the CSV output of the provided spreadsheet
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxBhC6K7BQ01gz4_5uvGyhVaxMHAMXUVW4im-FqtAiKoudZEhBN5ebyX93w0xmAAB2yPe3uT1PhwYn/pub?output=csv';
 
-        // Static Descriptions Database (Enhancement for UI)
+        // Static Descriptions Database
         const descriptionsDB = {
             'Deus': 'Mandamentos sobre a natureza divina e fé.',
             'Lei': 'Estudo e respeito à Torah.',
@@ -93,11 +95,15 @@ createApp({
             currentView.value = 'lista';
         }
 
+        function openDetail(cmd) {
+            selectedCommandment.value = cmd;
+            currentView.value = 'detalhe';
+            window.scrollTo(0, 0);
+        }
+
         function isPositive(mpValue) {
             if (!mpValue) return false;
             const v = mpValue.toLowerCase().trim();
-            // M -> + (Positivo)
-            // P -> - (Negativo)
             return v === 'm';
         }
 
@@ -149,7 +155,6 @@ createApp({
                     return key ? row[key] : '';
                 };
 
-                // Mapeamento flexível de colunas
                 const id = getVal(['mandamento', 'n° do mandamento', 'id', 'numero', 'nº do mandamento', 'nº']);
                 const nr_geral = getVal(['n° geral', 'numero geral', 'nº geral', 'nr geral', 'geral', 'ordem']);
                 const rambam = getVal(['nº', 'rambam', 'numero rambam', 'nº rambam', 'ramban', 'ref rambam']);
@@ -158,8 +163,6 @@ createApp({
                 const quem = getVal(['quem', 'sujeito', 'pessoa']);
                 const onde = getVal(['onde', 'lugar', 'local']);
                 
-                // Campos bíblicos - Suporte expandido
-                // Separando Livro de Ref (citação direta)
                 const ref_livro = getVal(['livro', 'livro bíblia', 'livro biblia', 'sefer']);
                 const ref_text = getVal(['ref', 'referência', 'referencia', 'citação', 'citacao']);
                 const ref_cap = getVal(['capítulo', 'capitulo', 'cap', 'cap.', 'c.', 'c', 'ch', 'chapter', 'perek', 'capitulos', 'capítulo bíblico', 'capitulo biblico']);
@@ -168,8 +171,8 @@ createApp({
                 const block = getVal(['bloco', 'categoria', 'assunto', 'tema', 'classificação']);
                 const tomo = getVal(['tomo', 'livro (rambam)', 'seção', 'secao']);
 
-                // Lista de chaves já processadas para não duplicar no conteúdo
-                const metaKeys = [
+                // Campos estruturais usados no cabeçalho do card/detalhe (não repetir no corpo)
+                const headerKeys = [
                     'n° do mandamento', 'id', 'numero', 'nº do mandamento', 'mandamento', 'nº',
                     'n° geral', 'numero geral', 'nº geral', 'nr geral', 'geral', 'ordem',
                     'rambam', 'numero rambam', 'nº rambam', 'ramban', 'ref rambam',
@@ -179,21 +182,28 @@ createApp({
                     'onde', 'lugar', 'local',
                     'bloco', 'categoria', 'assunto', 'tema', 'classificação',
                     'tomo', 'livro', 'seção', 'secao', 'livro (rambam)',
-                    // Campos Bíblicos expandidos
                     'capítulo', 'capitulo', 'cap', 'cap.', 'c.', 'c', 'ch', 'chapter', 'perek', 'capitulos', 'capítulo bíblico', 'capitulo biblico',
                     'versículo', 'versiculo', 'ver', 'vers', 'ver.', 'vers.', 'v.', 'v', 'verse', 'pasuk', 'versiculos', 'versículo bíblico', 'versiculo biblico',
-                    'referência', 'livro bíblia', 'ref', 'livro biblia', 'sefer', 'referencia', 'citação',
-                    // Exclusões solicitadas
+                    'referência', 'livro bíblia', 'ref', 'livro biblia', 'sefer', 'referencia', 'citação', 'citacao'
+                ];
+
+                // Campos a esconder na LISTA mas mostrar no DETALHE
+                const hiddenInListKeys = [
                     'comentario', 'comentário', 'brit hadasha', 'brit', 'brit_hadasha', 'novo testamento'
                 ];
 
-                // Qualquer outra coluna não mapeada vira conteúdo detalhado
-                const content = keys
-                    .filter(k => !metaKeys.includes(normalize(k)) && row[k]) 
+                // Conteúdo completo (para o detalhe)
+                const detailContent = keys
+                    .filter(k => !headerKeys.includes(normalize(k)) && row[k]) 
                     .map(k => ({
                         label: k,
                         value: row[k]
                     }));
+
+                // Conteúdo resumido (para a lista)
+                const listContent = detailContent.filter(item => 
+                    !hiddenInListKeys.includes(normalize(item.label))
+                );
 
                 return {
                     id: id || '?',
@@ -211,14 +221,14 @@ createApp({
 
                     block: block ? block.trim() : 'Outros',
                     tomo: tomo ? tomo.trim() : 'Geral',
-                    content: content,
+                    content: listContent,
+                    detailContent: detailContent,
                     type: mp
                 };
             });
 
             commandments.value = processed;
 
-            // Gerar filtros dinâmicos baseados no conteúdo real da planilha
             const uniqueBlocks = [...new Set(processed.map(c => c.block).filter(b => b))].sort();
             const uniqueTomos = [...new Set(processed.map(c => c.tomo).filter(t => t))].sort();
 
@@ -249,7 +259,6 @@ createApp({
                 if (chartInstance1) chartInstance1.destroy();
                 if (chartInstance2) chartInstance2.destroy();
 
-                // Contagem baseada na nova lógica: M é positivo, P é negativo
                 const posCount = commandments.value.filter(c => isPositive(c.mp)).length;
                 const negCount = commandments.value.length - posCount;
 
@@ -306,7 +315,6 @@ createApp({
                 if (commandments.value.length === 0 && !loading.value) fetchData();
                 else renderCharts();
             }
-            // Caso o usuário recarregue na view de lista
             if (newVal === 'lista' && commandments.value.length === 0 && !loading.value) {
                 fetchData();
             }
@@ -321,6 +329,8 @@ createApp({
             mobileMenuOpen,
             selectMode,
             filterCommandments,
+            openDetail,
+            selectedCommandment,
             activeMode,
             activeFilterList,
             selectedFilter,

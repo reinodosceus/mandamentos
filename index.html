@@ -44,7 +44,7 @@
                     <div class="hidden md:block">
                         <div class="ml-10 flex items-baseline space-x-8">
                             <a @click="currentView = 'home'" :class="{'text-gold border-b-2 border-gold': currentView === 'home'}" class="nav-link">Início</a>
-                            <a @click="currentView = 'mandamentos'" :class="{'text-gold border-b-2 border-gold': currentView === 'mandamentos' || currentView === 'lista'}" class="nav-link">Mandamentos</a>
+                            <a @click="currentView = 'mandamentos'" :class="{'text-gold border-b-2 border-gold': currentView === 'mandamentos' || currentView === 'lista' || currentView === 'detalhe'}" class="nav-link">Mandamentos</a>
                             <a @click="currentView = 'graficos'" :class="{'text-gold border-b-2 border-gold': currentView === 'graficos'}" class="nav-link">Gráficos</a>
                         </div>
                     </div>
@@ -163,7 +163,7 @@
 
                 <!-- Data List -->
                 <div v-else class="grid gap-6">
-                    <div v-for="(cmd, index) in filteredCommandments" :key="index" class="cmd-card">
+                    <div v-for="(cmd, index) in filteredCommandments" :key="index" class="cmd-card cursor-pointer hover:scale-[1.01] hover:bg-gray-800/80" @click="openDetail(cmd)">
                         <!-- Reference Section (Metadata) -->
                         <div class="flex flex-wrap gap-x-6 gap-y-3 mb-4 border-b border-gray-700 pb-3 items-center text-sm">
                             
@@ -181,12 +181,11 @@
 
                             <!-- B/M (Positivo/Negativo) com Ícone -->
                             <div class="flex items-center">
-                                <!-- M = Positivo (+), P = Negativo (-) conforme pedido -->
                                 <i v-if="isPositive(cmd.mp)" class="fa-solid fa-circle-plus text-green-400 text-xl" title="Positivo / Obrigação"></i>
                                 <i v-else class="fa-solid fa-circle-minus text-red-400 text-xl" title="Negativo / Proibição"></i>
                             </div>
 
-                            <!-- Referência Bíblica (Livro Ícone + Texto + Ref) -->
+                            <!-- Referência Bíblica -->
                             <div v-if="cmd.ref_livro || cmd.ref_text || cmd.ref_cap" class="flex items-center text-gray-300 mx-2">
                                 <i class="fa-solid fa-book text-blue-300 mr-2"></i>
                                 <span v-if="cmd.ref_livro" class="font-bold text-gray-100 mr-1">{{ cmd.ref_livro }}</span>
@@ -211,7 +210,7 @@
                             <span v-if="cmd.onde !== '-'" title="Onde"><i class="fa-solid fa-location-dot mr-1 text-gold"></i> {{ cmd.onde }}</span>
                         </div>
 
-                        <!-- Content Boxes (Dynamic) -->
+                        <!-- Content Boxes (Filtered) -->
                         <div class="grid grid-cols-1 gap-4">
                             <div v-for="field in cmd.content" :key="field.label" class="glass-panel p-4 bg-gray-800/30">
                                 <h4 class="text-xs text-gold uppercase tracking-widest mb-2 font-bold">{{ field.label }}</h4>
@@ -222,7 +221,82 @@
                     
                     <div v-if="!loading && !errorMsg && filteredCommandments.length === 0" class="text-center py-10 text-gray-500 glass-panel">
                         <p>Nenhum mandamento encontrado para este filtro na base de dados atual.</p>
-                        <p class="text-sm mt-2">Verifique se a planilha possui as colunas preenchidas corretamente.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DETAIL VIEW (SINGLE ISOLATED COMMANDMENT) -->
+            <div v-if="currentView === 'detalhe' && selectedCommandment" class="animate-fade-in max-w-5xl mx-auto">
+                <!-- Back Button -->
+                <div class="flex items-center mb-8">
+                    <button @click="currentView = 'lista'" class="text-gold hover:text-white mr-4 flex items-center px-4 py-2 border border-gold/30 rounded-lg hover:bg-gold/10 transition">
+                        <i class="fa-solid fa-arrow-left mr-2"></i> Voltar para Lista
+                    </button>
+                </div>
+
+                <div class="glass-panel p-6 md:p-10 border-t-4 border-gold relative overflow-hidden shadow-2xl">
+                    
+                    <!-- Header info (ID, MP, Ref) -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 border-b border-gray-700 pb-8 gap-6">
+                        <!-- Number/ID -->
+                        <div class="flex items-center">
+                            <span class="text-gold font-cinzel text-5xl md:text-6xl font-bold mr-6 drop-shadow-lg">#{{ selectedCommandment.id }}</span>
+                            <div class="flex flex-col">
+                                <span class="text-xs text-gray-400 uppercase tracking-widest">Mandamento</span>
+                                <span v-if="selectedCommandment.nr_geral !== '-'" class="text-base text-gray-400 font-mono">Geral: {{ selectedCommandment.nr_geral }}</span>
+                            </div>
+                        </div>
+                    
+                        <!-- MP Icon Large -->
+                        <div class="text-5xl">
+                            <i v-if="isPositive(selectedCommandment.mp)" class="fa-solid fa-circle-plus text-green-400 drop-shadow-lg" title="Positivo / Obrigação"></i>
+                            <i v-else class="fa-solid fa-circle-minus text-red-400 drop-shadow-lg" title="Negativo / Proibição"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- References Row Large -->
+                    <div class="flex flex-wrap gap-4 md:gap-8 mb-10 text-xl items-center bg-black/40 p-6 rounded-xl border border-gray-700/50">
+                        <!-- Bible Ref -->
+                        <div v-if="selectedCommandment.ref_livro" class="flex items-center text-gray-200">
+                            <i class="fa-solid fa-book-bible text-gold mr-3 text-2xl"></i>
+                            <span class="font-bold font-cinzel tracking-wide">{{ selectedCommandment.ref_livro }}</span>
+                            <span class="mx-3 text-gray-600">|</span>
+                            <span class="text-gold font-mono font-bold">{{ selectedCommandment.ref_text || (selectedCommandment.ref_cap + ':' + selectedCommandment.ref_ver) }}</span>
+                        </div>
+                        
+                        <!-- Rambam -->
+                        <div class="flex items-center ml-auto">
+                            <span class="mr-3 text-3xl" role="img" aria-label="Rambam">👳‍♂️</span>
+                            <span class="font-mono text-gray-300 text-base md:text-xl">Rambam: {{ selectedCommandment.rambam }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Meta Tags (Who, When, Where) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                        <div class="glass-panel p-4 text-center bg-gray-800/30">
+                            <span class="block text-xs text-gold uppercase mb-2 tracking-widest">Vigência</span>
+                            <span class="text-white text-lg font-light"><i class="fa-regular fa-calendar-check mr-2 text-gold/70"></i>{{ selectedCommandment.an }}</span>
+                        </div>
+                        <div class="glass-panel p-4 text-center bg-gray-800/30">
+                            <span class="block text-xs text-gold uppercase mb-2 tracking-widest">Sujeito</span>
+                            <span class="text-white text-lg font-light"><i class="fa-solid fa-user-group mr-2 text-gold/70"></i>{{ selectedCommandment.quem }}</span>
+                        </div>
+                        <div class="glass-panel p-4 text-center bg-gray-800/30">
+                            <span class="block text-xs text-gold uppercase mb-2 tracking-widest">Local</span>
+                            <span class="text-white text-lg font-light"><i class="fa-solid fa-location-dot mr-2 text-gold/70"></i>{{ selectedCommandment.onde }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Full Content (Dynamic Fields) -->
+                    <div class="space-y-8">
+                        <div v-for="field in selectedCommandment.detailContent" :key="field.label" class="glass-panel p-8 bg-gray-800/20">
+                            <h3 class="text-sm text-gold uppercase tracking-widest mb-4 font-bold border-b border-gray-700/50 pb-2 inline-block">
+                                {{ field.label }}
+                            </h3>
+                            <div class="text-gray-100 leading-relaxed text-lg whitespace-pre-wrap font-serif">
+                                {{ field.value }}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
