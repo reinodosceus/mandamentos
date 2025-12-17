@@ -28,7 +28,7 @@
         <!-- Background Elements -->
         <div class="fixed inset-0 z-0 pointer-events-none">
             <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0f172a] to-[#1e1b4b]"></div>
-            <div class="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+            <div class="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]""></div>
             <div class="star-field"></div>
         </div>
 
@@ -323,10 +323,14 @@
                 </div>
                 <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
                     <div class="chart-container glass-panel p-6">
-                        <h3 class="text-lg font-bold mb-4 text-center text-gold">Positivos vs Negativos</h3>
+                        <h3 class="text-lg font-bold mb-4 text-center text-gold">Boas Obras vs Más Obras</h3>
                         <canvas id="chartType"></canvas>
                     </div>
                     <div class="chart-container glass-panel p-6">
+                        <h3 class="text-lg font-bold mb-4 text-center text-gold">Mandamentos por Público</h3>
+                        <canvas id="chartQuem"></canvas>
+                    </div>
+                    <div class="chart-container glass-panel p-6 lg:col-span-2">
                         <h3 class="text-lg font-bold mb-4 text-center text-gold">Distribuição por Tomos (Top 5)</h3>
                         <canvas id="chartTomos"></canvas>
                     </div>
