@@ -257,12 +257,14 @@ createApp({
         let chartInstance1 = null;
         let chartInstance2 = null;
         let chartInstance3 = null;
+        let chartInstance4 = null;
 
         function renderCharts() {
             setTimeout(() => {
                 const ctx1 = document.getElementById('chartType');
                 const ctx2 = document.getElementById('chartTomos');
                 const ctx3 = document.getElementById('chartQuem');
+                const ctx4 = document.getElementById('chartOnde');
 
                 // Chart 1: Boas vs Más Obras (Positivo vs Negativo)
                 if (ctx1) {
@@ -357,6 +359,46 @@ createApp({
                                     position: 'bottom'
                                 } 
                             }
+                        }
+                    });
+                }
+
+                // Chart 4: Onde (Locais de Cumprimento)
+                if (ctx4) {
+                    if (chartInstance4) chartInstance4.destroy();
+                    
+                    const counts = {};
+                    commandments.value.forEach(c => {
+                        let t = c.onde ? c.onde.trim() : 'Não informado';
+                        // Normalização simples
+                        t = t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+                        if (t === '-' || t === '') t = 'Não informado';
+                        
+                        counts[t] = (counts[t] || 0) + 1;
+                    });
+
+                    // Ordenar por quantidade e pegar Top 6
+                    const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 6);
+
+                    chartInstance4 = new Chart(ctx4, {
+                        type: 'bar',
+                        data: {
+                            labels: sorted.map(i => i[0]),
+                            datasets: [{
+                                label: 'Mandamentos',
+                                data: sorted.map(i => i[1]),
+                                backgroundColor: 'rgba(16, 185, 129, 0.6)', // Emerald Green
+                                borderColor: '#10b981',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y', // Barras horizontais para facilitar leitura de nomes de lugares
+                            scales: {
+                                y: { ticks: { color: 'gray' } },
+                                x: { beginAtZero: true, ticks: { color: 'gray' } }
+                            },
+                            plugins: { legend: { display: false } }
                         }
                     });
                 }
