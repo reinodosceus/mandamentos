@@ -175,8 +175,8 @@
 
                             <!-- ID do Mandamento -->
                             <div class="flex items-center">
-                                <span class="text-gray-500 mr-2 uppercase text-xs tracking-wider">Mandamento:</span>
-                                <span class="text-white font-bold">{{ cmd.id }}</span>
+                                <span class="text-gray-500 mr-2 uppercase text-xs tracking-wider">ID:</span>
+                                <span class="text-white font-bold">#{{ cmd.id }}</span>
                             </div>
 
                             <!-- B/M (Positivo/Negativo) com Ícone -->
@@ -210,6 +210,9 @@
                             <span v-if="cmd.onde !== '-'" title="Onde"><i class="fa-solid fa-location-dot mr-1 text-gold"></i> {{ cmd.onde }}</span>
                         </div>
 
+                        <!-- Title added here for visibility -->
+                        <h3 class="text-xl font-cinzel text-white mb-3 pl-2 border-l-2 border-gold/50">{{ cmd.title }}</h3>
+
                         <!-- Content Boxes (Filtered) -->
                         <div class="grid grid-cols-1 gap-4">
                             <div v-for="field in cmd.content" :key="field.label" class="glass-panel p-4 bg-gray-800/30">
@@ -236,25 +239,36 @@
 
                 <div class="glass-panel p-6 md:p-10 border-t-4 border-gold relative overflow-hidden shadow-2xl">
                     
-                    <!-- Header info (ID, MP, Ref) -->
-                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 border-b border-gray-700 pb-8 gap-6">
-                        <!-- Number/ID -->
-                        <div class="flex items-center">
-                            <span class="text-gold font-cinzel text-5xl md:text-6xl font-bold mr-6 drop-shadow-lg">#{{ selectedCommandment.id }}</span>
-                            <div class="flex flex-col">
-                                <span class="text-xs text-gray-400 uppercase tracking-widest">Mandamento</span>
-                                <span v-if="selectedCommandment.nr_geral !== '-'" class="text-base text-gray-400 font-mono">Geral: {{ selectedCommandment.nr_geral }}</span>
+                    <!-- New Centered Header (Title / Nr Geral / MP) -->
+                    <div class="flex flex-col items-center text-center mb-10 border-b border-gray-700 pb-8">
+                        
+                        <!-- Title -->
+                        <h2 class="font-cinzel text-3xl md:text-5xl text-gold font-bold mb-6 glow-text leading-tight">
+                            {{ selectedCommandment.title }}
+                        </h2>
+
+                        <!-- Meta Row: Geral + MP -->
+                        <div class="flex items-center gap-6 text-2xl text-gray-300">
+                            
+                            <!-- Nr Geral -->
+                            <div v-if="selectedCommandment.nr_geral !== '-'" class="flex items-center" title="N° Geral">
+                                <i class="fa-solid fa-file-lines mr-3 text-gold/80"></i>
+                                <span class="font-mono font-bold">{{ selectedCommandment.nr_geral }}</span>
                             </div>
-                        </div>
-                    
-                        <!-- MP Icon Large -->
-                        <div class="text-5xl">
-                            <i v-if="isPositive(selectedCommandment.mp)" class="fa-solid fa-circle-plus text-green-400 drop-shadow-lg" title="Positivo / Obrigação"></i>
-                            <i v-else class="fa-solid fa-circle-minus text-red-400 drop-shadow-lg" title="Negativo / Proibição"></i>
+
+                            <!-- Divider -->
+                            <span v-if="selectedCommandment.nr_geral !== '-'" class="text-gray-600">|</span>
+
+                            <!-- MP Icon -->
+                            <div class="flex items-center">
+                                <i v-if="isPositive(selectedCommandment.mp)" class="fa-solid fa-circle-plus text-green-400" title="Positivo"></i>
+                                <i v-else class="fa-solid fa-circle-minus text-red-400" title="Negativo"></i>
+                            </div>
+
                         </div>
                     </div>
                     
-                    <!-- References Row Large -->
+                    <!-- References Row Large (Keep below header) -->
                     <div class="flex flex-wrap gap-4 md:gap-8 mb-10 text-xl items-center bg-black/40 p-6 rounded-xl border border-gray-700/50">
                         <!-- Bible Ref -->
                         <div v-if="selectedCommandment.ref_livro" class="flex items-center text-gray-200">
