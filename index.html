@@ -186,11 +186,13 @@
                                 <i v-else class="fa-solid fa-circle-minus text-red-400 text-xl" title="Negativo / Proibição"></i>
                             </div>
 
-                            <!-- Referência Bíblica (Livro Ícone + Texto Cap/Ver) LIMPA -->
-                            <div v-if="cmd.ref_livro || cmd.ref_cap" class="flex items-center text-gray-300 mx-2">
+                            <!-- Referência Bíblica (Livro Ícone + Texto + Ref) -->
+                            <div v-if="cmd.ref_livro || cmd.ref_text || cmd.ref_cap" class="flex items-center text-gray-300 mx-2">
                                 <i class="fa-solid fa-book text-blue-300 mr-2"></i>
                                 <span v-if="cmd.ref_livro" class="font-bold text-gray-100 mr-1">{{ cmd.ref_livro }}</span>
-                                <span v-if="cmd.ref_cap || cmd.ref_ver" class="font-mono text-gold ml-1 font-bold">
+                                
+                                <span v-if="cmd.ref_text" class="font-mono text-gold ml-1 font-bold">{{ cmd.ref_text }}</span>
+                                <span v-else-if="cmd.ref_cap || cmd.ref_ver" class="font-mono text-gold ml-1 font-bold">
                                     {{ cmd.ref_cap }}<span v-if="cmd.ref_cap && cmd.ref_ver">:</span>{{ cmd.ref_ver }}
                                 </span>
                             </div>
