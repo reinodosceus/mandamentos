@@ -12,79 +12,79 @@ createApp({
         const errorMsg = ref('');
         const blogPosts = ref([]);
         const blogLoading = ref(false);
+        
+        // Dynamic Filters State
+        const availableBlocks = ref([]);
+        const availableTomos = ref([]);
 
         // Configuration
-        // Updated URL to fix HTTP 400 error by using standard CSV export endpoint
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv4q3ANfmKZp4gG5NDG9LaY2l4d3o5-bKH5akeg2uBPd1MgKRQjCc0JW6DgFLYWJV0mfCIzolq4hqe/pub?output=csv';
+        // Updated URL to the new spreadsheet provided
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxBhC6K7BQ01gz4_5uvGyhVaxMHAMXUVW4im-FqtAiKoudZEhBN5ebyX93w0xmAAB2yPe3uT1PhwYn/pub?output=csv';
         
         const RSS_URL = 'https://livrodosmandamentos.blogspot.com/feeds/posts/default?alt=rss'; 
         const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
-        // Data Structure Definitions
-        const blocks = [
-            { title: 'Deus', desc: 'Mandamentos sobre a natureza divina e fé.' },
-            { title: 'Lei', desc: 'Estudo e respeito à Torah.' },
-            { title: 'Sinais e Símbolos', desc: 'Mezuzá, Tsitsit, Tefilin, etc.' },
-            { title: 'Oração e Benção', desc: 'Vida de oração e gratidão.' },
-            { title: 'Amor e Fraternidade', desc: 'Relações interpessoais.' },
-            { title: 'Gentios', desc: 'Relação com as nações.' },
-            { title: 'Casamento, divórcio e Família', desc: 'Estrutura familiar.' },
-            { title: 'Relações íntimas', desc: 'Santidade no relacionamento.' },
-            { title: 'Dias Santos', desc: 'Shabat e Festas.' },
-            { title: 'Alimentação', desc: 'Kashrut e leis dietéticas.' },
-            { title: 'Atos de dignidade', desc: 'Comportamento honrado.' },
-            { title: 'Funcionários, Servos e Escravos', desc: 'Leis trabalhistas bíblicas.' },
-            { title: 'Votos, Promessas e Juramentos', desc: 'Palavra e compromisso.' },
-            { title: 'Ano Sabático e Jubileu', desc: 'Descanso da terra e economia.' },
-            { title: 'Tribunal e Processo Judicial', desc: 'Justiça e julgamento.' },
-            { title: 'Danos e Prejuízos', desc: 'Responsabilidade civil.' },
-            { title: 'Propriedade', desc: 'Direitos de posse.' },
-            { title: 'Crimes', desc: 'Delitos graves.' },
-            { title: 'Castigo e Restituição', desc: 'Penalidades.' },
-            { title: 'Profecia', desc: 'Verdadeiros e falsos profetas.' },
-            { title: 'Idolatria e Idólatras', desc: 'Afastamento de deuses estranhos.' },
-            { title: 'Agricultura e Cuidado Animal', desc: 'Trato com a criação.' },
-            { title: 'Roupas', desc: 'Shatnez e vestimentas.' },
-            { title: 'Primogênito', desc: 'Consagração dos primeiros.' },
-            { title: 'Sacerdotes e Levitas', desc: 'Serviço sagrado.' },
-            { title: 'Ofertas, Dízimos e Impostos', desc: 'Contribuições sagradas.' },
-            { title: 'Templo, Santuário e Objetos Sagrados', desc: 'Local de habitação Divina.' },
-            { title: 'Sacrifício e Ofertas', desc: 'Sistema sacrificial.' },
-            { title: 'Rito de Pureza e Impureza', desc: 'Leis de Tahará.' },
-            { title: 'Leproso e Lepra', desc: 'Tsaraat e purificação.' },
-            { title: 'Rei', desc: 'Liderança de Israel.' },
-            { title: 'Nazireu', desc: 'Votos especiais de santidade.' },
-            { title: 'Guerras', desc: 'Conduta militar.' }
-        ];
-
-        const tomos = [
-            { title: 'Conhecimento (Mada)', desc: 'Fundamentos da Torah.' },
-            { title: 'Amor (Ahavá)', desc: 'Leis sobre o amor a Deus.' },
-            { title: 'Tempos (Zemanim)', desc: 'Shabat e Festas.' },
-            { title: 'Mulheres (Nashim)', desc: 'Casamento e família.' },
-            { title: 'Santidade (Kedushá)', desc: 'Alimentos e pureza sexual.' },
-            { title: 'Compromissos (Haflaá)', desc: 'Votos e juramentos.' },
-            { title: 'Sementes (Zeraim)', desc: 'Leis agrícolas.' },
-            { title: 'Serviço (Avodá)', desc: 'O Templo e oferendas.' },
-            { title: 'Sacrifícios (Korbanot)', desc: 'Oferendas particulares.' },
-            { title: 'Pureza (Tahorá)', desc: 'Pureza ritual.' },
-            { title: 'Danos (Nezikim)', desc: 'Danos civis e criminais.' },
-            { title: 'Aquisição (Kinyan)', desc: 'Compra e venda.' },
-            { title: 'Juízos (Mishpatim)', desc: 'Leis civis.' },
-            { title: 'Juízes (Shoftim)', desc: 'Tribunais, reis e guerras.' }
-        ];
+        // Static Descriptions Database (to enhance dynamic filters)
+        const descriptionsDB = {
+            'Deus': 'Mandamentos sobre a natureza divina e fé.',
+            'Lei': 'Estudo e respeito à Torah.',
+            'Sinais e Símbolos': 'Mezuzá, Tsitsit, Tefilin, etc.',
+            'Oração e Benção': 'Vida de oração e gratidão.',
+            'Amor e Fraternidade': 'Relações interpessoais.',
+            'Gentios': 'Relação com as nações.',
+            'Casamento, divórcio e Família': 'Estrutura familiar.',
+            'Relações íntimas': 'Santidade no relacionamento.',
+            'Dias Santos': 'Shabat e Festas.',
+            'Alimentação': 'Kashrut e leis dietéticas.',
+            'Atos de dignidade': 'Comportamento honrado.',
+            'Funcionários, Servos e Escravos': 'Leis trabalhistas bíblicas.',
+            'Votos, Promessas e Juramentos': 'Palavra e compromisso.',
+            'Ano Sabático e Jubileu': 'Descanso da terra e economia.',
+            'Tribunal e Processo Judicial': 'Justiça e julgamento.',
+            'Danos e Prejuízos': 'Responsabilidade civil.',
+            'Propriedade': 'Direitos de posse.',
+            'Crimes': 'Delitos graves.',
+            'Castigo e Restituição': 'Penalidades.',
+            'Profecia': 'Verdadeiros e falsos profetas.',
+            'Idolatria e Idólatras': 'Afastamento de deuses estranhos.',
+            'Agricultura e Cuidado Animal': 'Trato com a criação.',
+            'Roupas': 'Shatnez e vestimentas.',
+            'Primogênito': 'Consagração dos primeiros.',
+            'Sacerdotes e Levitas': 'Serviço sagrado.',
+            'Ofertas, Dízimos e Impostos': 'Contribuições sagradas.',
+            'Templo, Santuário e Objetos Sagrados': 'Local de habitação Divina.',
+            'Sacrifício e Ofertas': 'Sistema sacrificial.',
+            'Rito de Pureza e Impureza': 'Leis de Tahará.',
+            'Leproso e Lepra': 'Tsaraat e purificação.',
+            'Rei': 'Liderança de Israel.',
+            'Nazireu': 'Votos especiais de santidade.',
+            'Guerras': 'Conduta militar.',
+            'Conhecimento (Mada)': 'Fundamentos da Torah.',
+            'Amor (Ahavá)': 'Leis sobre o amor a Deus.',
+            'Tempos (Zemanim)': 'Shabat e Festas.',
+            'Mulheres (Nashim)': 'Casamento e família.',
+            'Santidade (Kedushá)': 'Alimentos e pureza sexual.',
+            'Compromissos (Haflaá)': 'Votos e juramentos.',
+            'Sementes (Zeraim)': 'Leis agrícolas.',
+            'Serviço (Avodá)': 'O Templo e oferendas.',
+            'Sacrifícios (Korbanot)': 'Oferendas particulares.',
+            'Pureza (Tahorá)': 'Pureza ritual.',
+            'Danos (Nezikim)': 'Danos civis e criminais.',
+            'Aquisição (Kinyan)': 'Compra e venda.',
+            'Juízos (Mishpatim)': 'Leis civis.',
+            'Juízes (Shoftim)': 'Tribunais, reis e guerras.'
+        };
 
         // Logic
         const activeFilterList = computed(() => {
-            return activeMode.value === 'blocos' ? blocks : tomos;
+            return activeMode.value === 'blocos' ? availableBlocks.value : availableTomos.value;
         });
 
         const filteredCommandments = computed(() => {
             if (!selectedFilter.value) return [];
             return commandments.value.filter(cmd => {
                 const target = activeMode.value === 'blocos' ? cmd.block : cmd.tomo;
-                // Robust filter checking even if field is missing
-                return target && target.toLowerCase().includes(selectedFilter.value.toLowerCase());
+                return target && target.trim() === selectedFilter.value;
             });
         });
 
@@ -110,8 +110,7 @@ createApp({
             errorMsg.value = '';
             
             try {
-                // Fetch text first to handle errors better
-                const response = await fetch(CSV_URL + '&t=' + Date.now()); // timestamp to prevent caching
+                const response = await fetch(CSV_URL + '&t=' + Date.now());
                 
                 if (!response.ok) {
                     throw new Error(`Erro HTTP: ${response.status}`);
@@ -144,8 +143,7 @@ createApp({
         }
 
         function processData(data) {
-            commandments.value = data.map(row => {
-                // Normalize keys for easier finding
+            const processed = data.map(row => {
                 const keys = Object.keys(row);
                 const normalize = k => k ? k.trim().toLowerCase() : '';
                 
@@ -154,35 +152,32 @@ createApp({
                     return key ? row[key] : '';
                 };
 
-                // Map specific reference columns based on user request
-                const id = getVal(['n° do mandamento', 'id', 'numero', 'nº do mandamento', 'mandamento']);
-                const rambam = getVal(['nº', 'rambam', 'numero rambam', 'nº rambam', 'ramban']);
-                const mp = getVal(['m/p', 'tipo', 'p/n', 'modo']);
+                const id = getVal(['n° do mandamento', 'id', 'numero', 'nº do mandamento', 'mandamento', 'nº']);
+                const rambam = getVal(['nº', 'rambam', 'numero rambam', 'nº rambam', 'ramban', 'ref rambam']);
+                const mp = getVal(['m/p', 'tipo', 'p/n', 'modo', 'natureza']);
                 const an = getVal(['a/n', 'atual', 'vigente', 'an']);
                 const quem = getVal(['quem', 'sujeito', 'pessoa']);
                 const onde = getVal(['onde', 'lugar', 'local']);
                 
-                // Filter columns (Metadata for Logic)
-                const block = getVal(['bloco', 'categoria', 'assunto', 'tema']);
-                const tomo = getVal(['tomo', 'livro', 'seção', 'secao']);
+                const block = getVal(['bloco', 'categoria', 'assunto', 'tema', 'classificação']);
+                const tomo = getVal(['tomo', 'livro', 'seção', 'secao', 'livro (rambam)']);
 
-                // Content columns (Everything else goes into boxes)
                 const metaKeys = [
-                    'n° do mandamento', 'id', 'numero', 'nº do mandamento', 'mandamento',
-                    'nº', 'rambam', 'numero rambam', 'nº rambam', 'ramban',
-                    'm/p', 'tipo', 'p/n', 'modo',
+                    'n° do mandamento', 'id', 'numero', 'nº do mandamento', 'mandamento', 'nº',
+                    'rambam', 'numero rambam', 'nº rambam', 'ramban', 'ref rambam',
+                    'm/p', 'tipo', 'p/n', 'modo', 'natureza',
                     'a/n', 'atual', 'vigente', 'an',
                     'quem', 'sujeito', 'pessoa',
                     'onde', 'lugar', 'local',
-                    'bloco', 'categoria', 'assunto', 'tema',
-                    'tomo', 'livro', 'seção', 'secao'
+                    'bloco', 'categoria', 'assunto', 'tema', 'classificação',
+                    'tomo', 'livro', 'seção', 'secao', 'livro (rambam)'
                 ];
 
                 const content = keys
-                    .filter(k => !metaKeys.includes(normalize(k)))
+                    .filter(k => !metaKeys.includes(normalize(k)) && row[k]) // Only non-empty
                     .map(k => ({
                         label: k,
-                        value: row[k] // Value keeps original formatting, even if empty
+                        value: row[k]
                     }));
 
                 return {
@@ -192,12 +187,28 @@ createApp({
                     an: an || '-',
                     quem: quem || '-',
                     onde: onde || '-',
-                    block: block || '',
-                    tomo: tomo || '',
+                    block: block ? block.trim() : 'Outros',
+                    tomo: tomo ? tomo.trim() : 'Geral',
                     content: content,
                     type: mp
                 };
             });
+
+            commandments.value = processed;
+
+            // Dynamically generate filters from data
+            const uniqueBlocks = [...new Set(processed.map(c => c.block).filter(b => b))].sort();
+            const uniqueTomos = [...new Set(processed.map(c => c.tomo).filter(t => t))].sort();
+
+            availableBlocks.value = uniqueBlocks.map(title => ({
+                title,
+                desc: descriptionsDB[title] || 'Categoria temática de mandamentos.'
+            }));
+
+            availableTomos.value = uniqueTomos.map(title => ({
+                title,
+                desc: descriptionsDB[title] || 'Livro da Mishneh Torah.'
+            }));
             
             if (currentView.value === 'graficos') renderCharts();
         }
@@ -264,7 +275,7 @@ createApp({
                     data: {
                         labels: sortedTomos.map(i => i[0]),
                         datasets: [{
-                            label: 'Mandamentos por Tomo',
+                            label: 'Top 5 Tomos',
                             data: sortedTomos.map(i => i[1]),
                             backgroundColor: 'rgba(212, 175, 55, 0.6)',
                             borderColor: '#d4af37',
