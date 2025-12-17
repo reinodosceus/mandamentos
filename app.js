@@ -159,7 +159,9 @@ createApp({
                 const onde = getVal(['onde', 'lugar', 'local']);
                 
                 // Campos bíblicos - Suporte expandido
-                const ref_livro = getVal(['livro', 'livro bíblia', 'referência', 'ref', 'livro biblia', 'sefer']);
+                // Separando Livro de Ref (citação direta)
+                const ref_livro = getVal(['livro', 'livro bíblia', 'livro biblia', 'sefer']);
+                const ref_text = getVal(['ref', 'referência', 'referencia', 'citação', 'citacao']);
                 const ref_cap = getVal(['capítulo', 'capitulo', 'cap', 'cap.', 'c.', 'c', 'ch', 'chapter', 'perek', 'capitulos', 'capítulo bíblico', 'capitulo biblico']);
                 const ref_ver = getVal(['versículo', 'versiculo', 'ver', 'vers', 'ver.', 'vers.', 'v.', 'v', 'verse', 'pasuk', 'versiculos', 'versículo bíblico', 'versiculo biblico']);
                 
@@ -180,7 +182,9 @@ createApp({
                     // Campos Bíblicos expandidos
                     'capítulo', 'capitulo', 'cap', 'cap.', 'c.', 'c', 'ch', 'chapter', 'perek', 'capitulos', 'capítulo bíblico', 'capitulo biblico',
                     'versículo', 'versiculo', 'ver', 'vers', 'ver.', 'vers.', 'v.', 'v', 'verse', 'pasuk', 'versiculos', 'versículo bíblico', 'versiculo biblico',
-                    'referência', 'livro bíblia', 'ref', 'livro biblia', 'sefer'
+                    'referência', 'livro bíblia', 'ref', 'livro biblia', 'sefer', 'referencia', 'citação',
+                    // Exclusões solicitadas
+                    'comentario', 'comentário', 'brit hadasha', 'brit', 'brit_hadasha', 'novo testamento'
                 ];
 
                 // Qualquer outra coluna não mapeada vira conteúdo detalhado
@@ -201,6 +205,7 @@ createApp({
                     onde: onde || '-',
                     
                     ref_livro: ref_livro || '',
+                    ref_text: ref_text || '',
                     ref_cap: ref_cap || '',
                     ref_ver: ref_ver || '',
 
