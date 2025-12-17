@@ -10,21 +10,16 @@ createApp({
         const commandments = ref([]);
         const loading = ref(false);
         const errorMsg = ref('');
-        const blogPosts = ref([]);
-        const blogLoading = ref(false);
         
         // Dynamic Filters State
         const availableBlocks = ref([]);
         const availableTomos = ref([]);
 
         // Configuration
-        // Updated URL to the new spreadsheet provided
+        // URL pointing to the CSV output of the provided spreadsheet
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxBhC6K7BQ01gz4_5uvGyhVaxMHAMXUVW4im-FqtAiKoudZEhBN5ebyX93w0xmAAB2yPe3uT1PhwYn/pub?output=csv';
-        
-        const RSS_URL = 'https://livrodosmandamentos.blogspot.com/feeds/posts/default?alt=rss'; 
-        const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
-        // Static Descriptions Database (to enhance dynamic filters)
+        // Static Descriptions Database (Enhancement for UI)
         const descriptionsDB = {
             'Deus': 'Mandamentos sobre a natureza divina e fé.',
             'Lei': 'Estudo e respeito à Torah.',
@@ -99,9 +94,11 @@ createApp({
         }
 
         function isPositive(mpValue) {
-            if (!mpValue) return true;
-            const v = mpValue.toLowerCase();
-            return v.includes('positivo') || v === 'p' || v.includes('obrigação');
+            if (!mpValue) return false;
+            const v = mpValue.toLowerCase().trim();
+            // M -> + (Positivo)
+            // P -> - (Negativo)
+            return v === 'm';
         }
 
         // Data Fetching
@@ -152,29 +149,43 @@ createApp({
                     return key ? row[key] : '';
                 };
 
-                const id = getVal(['n° do mandamento', 'id', 'numero', 'nº do mandamento', 'mandamento', 'nº']);
+                // Mapeamento flexível de colunas
+                const id = getVal(['mandamento', 'n° do mandamento', 'id', 'numero', 'nº do mandamento', 'nº']);
+                const nr_geral = getVal(['n° geral', 'numero geral', 'nº geral', 'nr geral', 'geral', 'ordem']);
                 const rambam = getVal(['nº', 'rambam', 'numero rambam', 'nº rambam', 'ramban', 'ref rambam']);
-                const mp = getVal(['m/p', 'tipo', 'p/n', 'modo', 'natureza']);
+                const mp = getVal(['m/p', 'tipo', 'p/n', 'modo', 'natureza', 'b/m']);
                 const an = getVal(['a/n', 'atual', 'vigente', 'an']);
                 const quem = getVal(['quem', 'sujeito', 'pessoa']);
                 const onde = getVal(['onde', 'lugar', 'local']);
                 
+                // Campos bíblicos - Suporte expandido
+                const ref_livro = getVal(['livro', 'livro bíblia', 'referência', 'ref', 'livro biblia', 'sefer']);
+                const ref_cap = getVal(['capítulo', 'capitulo', 'cap', 'cap.', 'c.', 'c', 'ch', 'chapter', 'perek', 'capitulos', 'capítulo bíblico', 'capitulo biblico']);
+                const ref_ver = getVal(['versículo', 'versiculo', 'ver', 'vers', 'ver.', 'vers.', 'v.', 'v', 'verse', 'pasuk', 'versiculos', 'versículo bíblico', 'versiculo biblico']);
+                
                 const block = getVal(['bloco', 'categoria', 'assunto', 'tema', 'classificação']);
-                const tomo = getVal(['tomo', 'livro', 'seção', 'secao', 'livro (rambam)']);
+                const tomo = getVal(['tomo', 'livro (rambam)', 'seção', 'secao']);
 
+                // Lista de chaves já processadas para não duplicar no conteúdo
                 const metaKeys = [
                     'n° do mandamento', 'id', 'numero', 'nº do mandamento', 'mandamento', 'nº',
+                    'n° geral', 'numero geral', 'nº geral', 'nr geral', 'geral', 'ordem',
                     'rambam', 'numero rambam', 'nº rambam', 'ramban', 'ref rambam',
-                    'm/p', 'tipo', 'p/n', 'modo', 'natureza',
+                    'm/p', 'tipo', 'p/n', 'modo', 'natureza', 'b/m',
                     'a/n', 'atual', 'vigente', 'an',
                     'quem', 'sujeito', 'pessoa',
                     'onde', 'lugar', 'local',
                     'bloco', 'categoria', 'assunto', 'tema', 'classificação',
-                    'tomo', 'livro', 'seção', 'secao', 'livro (rambam)'
+                    'tomo', 'livro', 'seção', 'secao', 'livro (rambam)',
+                    // Campos Bíblicos expandidos
+                    'capítulo', 'capitulo', 'cap', 'cap.', 'c.', 'c', 'ch', 'chapter', 'perek', 'capitulos', 'capítulo bíblico', 'capitulo biblico',
+                    'versículo', 'versiculo', 'ver', 'vers', 'ver.', 'vers.', 'v.', 'v', 'verse', 'pasuk', 'versiculos', 'versículo bíblico', 'versiculo biblico',
+                    'referência', 'livro bíblia', 'ref', 'livro biblia', 'sefer'
                 ];
 
+                // Qualquer outra coluna não mapeada vira conteúdo detalhado
                 const content = keys
-                    .filter(k => !metaKeys.includes(normalize(k)) && row[k]) // Only non-empty
+                    .filter(k => !metaKeys.includes(normalize(k)) && row[k]) 
                     .map(k => ({
                         label: k,
                         value: row[k]
@@ -182,11 +193,17 @@ createApp({
 
                 return {
                     id: id || '?',
+                    nr_geral: nr_geral || '-',
                     rambam: rambam || '-',
                     mp: mp || '-',
                     an: an || '-',
                     quem: quem || '-',
                     onde: onde || '-',
+                    
+                    ref_livro: ref_livro || '',
+                    ref_cap: ref_cap || '',
+                    ref_ver: ref_ver || '',
+
                     block: block ? block.trim() : 'Outros',
                     tomo: tomo ? tomo.trim() : 'Geral',
                     content: content,
@@ -196,7 +213,7 @@ createApp({
 
             commandments.value = processed;
 
-            // Dynamically generate filters from data
+            // Gerar filtros dinâmicos baseados no conteúdo real da planilha
             const uniqueBlocks = [...new Set(processed.map(c => c.block).filter(b => b))].sort();
             const uniqueTomos = [...new Set(processed.map(c => c.tomo).filter(t => t))].sort();
 
@@ -213,23 +230,7 @@ createApp({
             if (currentView.value === 'graficos') renderCharts();
         }
 
-        // Blog Fetching
-        async function fetchBlog() {
-            blogLoading.value = true;
-            try {
-                const response = await fetch(RSS2JSON_API + encodeURIComponent(RSS_URL));
-                const data = await response.json();
-                if (data.status === 'ok') {
-                    blogPosts.value = data.items;
-                }
-            } catch (e) {
-                console.error("Erro Blog:", e);
-            } finally {
-                blogLoading.value = false;
-            }
-        }
-
-        // Charts
+        // Charts Logic
         let chartInstance1 = null;
         let chartInstance2 = null;
 
@@ -243,13 +244,14 @@ createApp({
                 if (chartInstance1) chartInstance1.destroy();
                 if (chartInstance2) chartInstance2.destroy();
 
+                // Contagem baseada na nova lógica: M é positivo, P é negativo
                 const posCount = commandments.value.filter(c => isPositive(c.mp)).length;
                 const negCount = commandments.value.length - posCount;
 
                 chartInstance1 = new Chart(ctx1, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Positivos (Fazer)', 'Negativos (Não Fazer)'],
+                        labels: ['M (Positivos)', 'P (Negativos)'],
                         datasets: [{
                             data: [posCount, negCount],
                             backgroundColor: ['#d4af37', '#1e1b4b'],
@@ -299,9 +301,7 @@ createApp({
                 if (commandments.value.length === 0 && !loading.value) fetchData();
                 else renderCharts();
             }
-            if (newVal === 'blog' && blogPosts.value.length === 0) {
-                fetchBlog();
-            }
+            // Caso o usuário recarregue na view de lista
             if (newVal === 'lista' && commandments.value.length === 0 && !loading.value) {
                 fetchData();
             }
@@ -323,8 +323,6 @@ createApp({
             loading,
             errorMsg,
             fetchData,
-            blogPosts,
-            blogLoading,
             isPositive
         };
     }
