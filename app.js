@@ -155,7 +155,14 @@ createApp({
                     return key ? row[key] : '';
                 };
 
-                const id = getVal(['mandamento', 'n° do mandamento', 'id', 'numero', 'nº do mandamento', 'nº']);
+                // Identificadores e Títulos
+                // Separamos ID numérico de Título (descrição curta)
+                const rawId = getVal(['n° do mandamento', 'id', 'numero', 'nº do mandamento', 'nº', 'ordem']);
+                const rawTitle = getVal(['mandamento', 'titulo', 'nome', 'descrição', 'assunto']);
+                
+                const id = rawId || '?';
+                const title = rawTitle || (rawId ? `Mandamento ${rawId}` : 'Detalhes');
+
                 const nr_geral = getVal(['n° geral', 'numero geral', 'nº geral', 'nr geral', 'geral', 'ordem']);
                 const rambam = getVal(['nº', 'rambam', 'numero rambam', 'nº rambam', 'ramban', 'ref rambam']);
                 const mp = getVal(['m/p', 'tipo', 'p/n', 'modo', 'natureza', 'b/m']);
@@ -206,7 +213,8 @@ createApp({
                 );
 
                 return {
-                    id: id || '?',
+                    id: id,
+                    title: title,
                     nr_geral: nr_geral || '-',
                     rambam: rambam || '-',
                     mp: mp || '-',
@@ -290,7 +298,7 @@ createApp({
                     type: 'bar',
                     data: {
                         labels: sortedTomos.map(i => i[0]),
-                        datasets: [{
+                        datasets: [{ 
                             label: 'Top 5 Tomos',
                             data: sortedTomos.map(i => i[1]),
                             backgroundColor: 'rgba(212, 175, 55, 0.6)',
