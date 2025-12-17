@@ -256,64 +256,152 @@ createApp({
         // Charts Logic
         let chartInstance1 = null;
         let chartInstance2 = null;
+        let chartInstance3 = null;
+        let chartInstance4 = null;
 
         function renderCharts() {
             setTimeout(() => {
                 const ctx1 = document.getElementById('chartType');
                 const ctx2 = document.getElementById('chartTomos');
+                const ctx3 = document.getElementById('chartQuem');
+                const ctx4 = document.getElementById('chartOnde');
 
-                if (!ctx1 || !ctx2) return;
+                // Chart 1: Boas vs Más Obras (Positivo vs Negativo)
+                if (ctx1) {
+                    if (chartInstance1) chartInstance1.destroy();
+                    const posCount = commandments.value.filter(c => isPositive(c.mp)).length;
+                    const negCount = commandments.value.length - posCount;
 
-                if (chartInstance1) chartInstance1.destroy();
-                if (chartInstance2) chartInstance2.destroy();
-
-                const posCount = commandments.value.filter(c => isPositive(c.mp)).length;
-                const negCount = commandments.value.length - posCount;
-
-                chartInstance1 = new Chart(ctx1, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['M (Positivos)', 'P (Negativos)'],
-                        datasets: [{
-                            data: [posCount, negCount],
-                            backgroundColor: ['#d4af37', '#1e1b4b'],
-                            borderColor: '#ffffff',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        plugins: { legend: { labels: { color: 'white' } } }
-                    }
-                });
-
-                const tomoCounts = {};
-                commandments.value.forEach(c => {
-                    const t = c.tomo || 'Outros';
-                    tomoCounts[t] = (tomoCounts[t] || 0) + 1;
-                });
-                
-                const sortedTomos = Object.entries(tomoCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
-
-                chartInstance2 = new Chart(ctx2, {
-                    type: 'bar',
-                    data: {
-                        labels: sortedTomos.map(i => i[0]),
-                        datasets: [{ 
-                            label: 'Top 5 Tomos',
-                            data: sortedTomos.map(i => i[1]),
-                            backgroundColor: 'rgba(212, 175, 55, 0.6)',
-                            borderColor: '#d4af37',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: { beginAtZero: true, ticks: { color: 'gray' } },
-                            x: { ticks: { color: 'gray' } }
+                    chartInstance1 = new Chart(ctx1, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Boas Obras (M)', 'Más Obras (P)'],
+                            datasets: [{
+                                data: [posCount, negCount],
+                                backgroundColor: ['#d4af37', '#1e1b4b'],
+                                borderColor: '#ffffff',
+                                borderWidth: 1
+                            }]
                         },
-                        plugins: { legend: { labels: { color: 'white' } } }
-                    }
-                });
+                        options: {
+                            plugins: { legend: { labels: { color: 'white' } } }
+                        }
+                    });
+                }
+
+                // Chart 2: Distribuição por Tomos (Existing)
+                if (ctx2) {
+                    if (chartInstance2) chartInstance2.destroy();
+                    const tomoCounts = {};
+                    commandments.value.forEach(c => {
+                        const t = c.tomo || 'Outros';
+                        tomoCounts[t] = (tomoCounts[t] || 0) + 1;
+                    });
+                    
+                    const sortedTomos = Object.entries(tomoCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+                    chartInstance2 = new Chart(ctx2, {
+                        type: 'bar',
+                        data: {
+                            labels: sortedTomos.map(i => i[0]),
+                            datasets: [{ 
+                                label: 'Top 5 Tomos',
+                                data: sortedTomos.map(i => i[1]),
+                                backgroundColor: 'rgba(212, 175, 55, 0.6)',
+                                borderColor: '#d4af37',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: { beginAtZero: true, ticks: { color: 'gray' } },
+                                x: { ticks: { color: 'gray' } }
+                            },
+                            plugins: { legend: { labels: { color: 'white' } } }
+                        }
+                    });
+                }
+
+                // Chart 3: Quem (Homens, Mulheres, Ambos)
+                if (ctx3) {
+                    if (chartInstance3) chartInstance3.destroy();
+                    
+                    let counts = { 'Homens': 0, 'Mulheres': 0, 'Ambos': 0 };
+
+                    commandments.value.forEach(c => {
+                        const t = c.quem ? c.quem.toLowerCase() : '';
+                        if (t.includes('ambos') || t.includes('todos') || t.includes('israel') || t.includes('povo') || t.includes('cada um')) {
+                            counts['Ambos']++;
+                        } else if (t.includes('mulher') || t.includes('esposa')) {
+                            counts['Mulheres']++;
+                        } else if (t.includes('homem') || t.includes('sacerdote') || t.includes('judeu') || t.includes('marido') || t.includes('pai')) {
+                            counts['Homens']++;
+                        } else {
+                            counts['Ambos']++; // Default
+                        }
+                    });
+
+                    chartInstance3 = new Chart(ctx3, {
+                        type: 'pie',
+                        data: {
+                            labels: ['Homens', 'Mulheres', 'Ambos'],
+                            datasets: [{
+                                data: [counts['Homens'], counts['Mulheres'], counts['Ambos']],
+                                backgroundColor: ['#3b82f6', '#ec4899', '#d4af37'],
+                                borderColor: '#ffffff',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            plugins: { 
+                                legend: { 
+                                    labels: { color: 'white' },
+                                    position: 'bottom'
+                                } 
+                            }
+                        }
+                    });
+                }
+
+                // Chart 4: Onde (Locais de Cumprimento)
+                if (ctx4) {
+                    if (chartInstance4) chartInstance4.destroy();
+                    
+                    const counts = {};
+                    commandments.value.forEach(c => {
+                        let t = c.onde ? c.onde.trim() : 'Não informado';
+                        // Normalização simples
+                        t = t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+                        if (t === '-' || t === '') t = 'Não informado';
+                        
+                        counts[t] = (counts[t] || 0) + 1;
+                    });
+
+                    // Ordenar por quantidade e pegar Top 6
+                    const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 6);
+
+                    chartInstance4 = new Chart(ctx4, {
+                        type: 'bar',
+                        data: {
+                            labels: sorted.map(i => i[0]),
+                            datasets: [{
+                                label: 'Mandamentos',
+                                data: sorted.map(i => i[1]),
+                                backgroundColor: 'rgba(16, 185, 129, 0.6)', // Emerald Green
+                                borderColor: '#10b981',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y', // Barras horizontais para facilitar leitura de nomes de lugares
+                            scales: {
+                                y: { ticks: { color: 'gray' } },
+                                x: { beginAtZero: true, ticks: { color: 'gray' } }
+                            },
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                }
 
             }, 100);
         }
