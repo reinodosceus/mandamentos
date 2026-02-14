@@ -28,7 +28,7 @@
         <!-- Background Elements -->
         <div class="fixed inset-0 z-0 pointer-events-none">
             <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0f172a] to-[#1e1b4b]"></div>
-            <div class="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+            <div class="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" style="background-repeat: repeat;"></div>
             <div class="star-field"></div>
         </div>
 
@@ -44,6 +44,7 @@
                     <div class="hidden md:block">
                         <div class="ml-10 flex items-baseline space-x-8">
                             <a @click="currentView = 'home'" :class="{'text-gold border-b-2 border-gold': currentView === 'home'}" class="nav-link">Início</a>
+                            <a @click="currentView = 'leis'" :class="{'text-gold border-b-2 border-gold': currentView === 'leis' || currentView === 'leis_detalhe'}" class="nav-link">As 4 Leis</a>
                             <a @click="currentView = 'mandamentos'" :class="{'text-gold border-b-2 border-gold': currentView === 'mandamentos' || currentView === 'lista' || currentView === 'detalhe'}" class="nav-link">Mandamentos</a>
                             <a @click="currentView = 'graficos'" :class="{'text-gold border-b-2 border-gold': currentView === 'graficos'}" class="nav-link">Gráficos</a>
                         </div>
@@ -59,6 +60,7 @@
             <!-- Mobile Menu -->
             <div v-if="mobileMenuOpen" class="md:hidden glass-dark absolute w-full">
                 <a @click="currentView = 'home'; mobileMenuOpen = false" class="block px-4 py-3 hover:bg-gold/10">Início</a>
+                <a @click="currentView = 'leis'; mobileMenuOpen = false" class="block px-4 py-3 hover:bg-gold/10">As 4 Leis</a>
                 <a @click="currentView = 'mandamentos'; mobileMenuOpen = false" class="block px-4 py-3 hover:bg-gold/10">Mandamentos</a>
                 <a @click="currentView = 'graficos'; mobileMenuOpen = false" class="block px-4 py-3 hover:bg-gold/10">Gráficos</a>
             </div>
@@ -75,11 +77,16 @@
                     </h2>
                     <p class="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto mb-10 font-light">
                         A Eterna Aliança entre o Antigo e o Novo. <br class="hidden md:inline" />
-                        Uma exploração visual e espiritual das 613 Leis do Eterno.
+                        Uma exploração visual e espiritual dos 613 Mandamentos do Eterno.
                     </p>
-                    <button @click="currentView = 'mandamentos'" class="btn-futuristic">
-                        EXPLORAR AS LEIS
-                    </button>
+                    <div class="flex flex-col md:flex-row gap-4 justify-center">
+                        <button @click="currentView = 'leis'" class="btn-futuristic">
+                            AS 4 LEIS ESPIRITUAIS
+                        </button>
+                        <button @click="currentView = 'mandamentos'" class="btn-futuristic opacity-80 hover:opacity-100">
+                            OS 613 MANDAMENTOS
+                        </button>
+                    </div>
                 </div>
 
                 <div class="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
@@ -97,6 +104,83 @@
                         <i class="fa-solid fa-chart-pie text-4xl text-green-400 mb-4"></i>
                         <h3 class="text-xl font-bold mb-2">Análise</h3>
                         <p class="text-sm text-gray-400">Visualize dados e categorias através de gráficos interativos.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LEIS VIEW (LISTA DE BLOCOS) -->
+            <div v-if="currentView === 'leis'" class="animate-fade-in">
+                <h2 class="section-title">As 4 Leis Espirituais</h2>
+                <p class="text-center text-gray-400 mb-10 max-w-2xl mx-auto">Estudo aprofundado dos temas fundamentais. Selecione uma coluna temática para visualizar os ensinos.</p>
+
+                <!-- Loading State Leis -->
+                <div v-if="leisLoading" class="text-center py-20">
+                    <i class="fa-solid fa-circle-notch fa-spin text-4xl text-gold"></i>
+                    <p class="mt-4">Carregando as Leis...</p>
+                </div>
+
+                <!-- Error State Leis -->
+                <div v-if="!leisLoading && leisErrorMsg" class="text-center py-10 text-red-400">
+                     <i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i>
+                     <p>{{ leisErrorMsg }}</p>
+                </div>
+
+                <!-- Grid de Blocos das Leis -->
+                <div v-if="!leisLoading && leisBlocks.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-4">
+                    <div v-for="block in leisBlocks" :key="block.title" @click="openLeiBlock(block)" class="selection-card group border border-gold/30 hover:border-gold h-64">
+                        <div class="overlay bg-blue-900/30"></div>
+                        <div class="z-10 relative text-center p-4">
+                            <div class="text-3xl text-gold mb-3 opacity-80 group-hover:opacity-100 transition">
+                                <i class="fa-solid fa-book-open"></i>
+                            </div>
+                            <h3 class="text-xl font-cinzel text-white group-hover:text-gold transition-colors font-bold">{{ block.title }}</h3>
+                            <p class="mt-2 text-gray-400 text-xs">{{ block.count }} Ensinos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LEIS DETALHE (ESTUDO) -->
+            <div v-if="currentView === 'leis_detalhe' && selectedLeiBlock" class="animate-fade-in max-w-4xl mx-auto">
+                 <!-- Header -->
+                 <div class="flex items-center mb-8">
+                    <button @click="currentView = 'leis'" class="text-gold hover:text-white mr-4 flex items-center px-4 py-2 border border-gold/30 rounded-lg hover:bg-gold/10 transition">
+                        <i class="fa-solid fa-arrow-left mr-2"></i> Voltar aos Temas
+                    </button>
+                </div>
+
+                <div class="text-center mb-12">
+                    <h2 class="font-cinzel text-4xl text-gold glow-text mb-2">{{ selectedLeiBlock.title }}</h2>
+                    <div class="h-1 w-24 bg-gold mx-auto"></div>
+                </div>
+
+                <!-- Lista de Cards do Bloco Selecionado -->
+                <div class="space-y-6">
+                    <div v-for="(row, idx) in selectedLeiBlock.rows" :key="idx" class="glass-panel p-6 relative overflow-hidden text-center">
+                        <!-- Decoração lateral -->
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-transparent via-gold to-transparent"></div>
+                        
+                        <!-- Título da Célula (Coluna D) -->
+                        <div v-if="row.title" class="mb-4 pb-2 border-b border-gray-700/50">
+                            <h3 class="text-xl font-cinzel text-gold font-bold" v-html="formatLeiTitleHtml(row.title)"></h3>
+                        </div>
+
+                        <!-- Conteúdo Dinâmico -->
+                        <div class="flex flex-col gap-4">
+                            <div v-for="field in row.content" :key="field.label">
+                                <div v-if="field.isRef" class="flex items-start gap-3 bg-black/20 p-3 rounded-lg border-l-2 border-blue-400 text-left">
+                                    <i class="fa-solid fa-quote-left text-blue-400 mt-1"></i>
+                                    <div>
+                                        <p class="text-gray-300 italic font-serif text-lg">{{ field.value }}</p>
+                                        <p class="text-blue-400 text-sm font-bold mt-1 text-right">{{ field.label }}</p>
+                                    </div>
+                                </div>
+                                <div v-else>
+                                    <span v-if="field.showLabel" class="text-xs text-gold uppercase tracking-widest font-bold">{{ field.label }}:</span>
+                                    <div class="text-gray-300 whitespace-pre-wrap leading-relaxed text-lg">{{ field.value }}</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
