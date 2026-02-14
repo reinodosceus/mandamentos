@@ -18,8 +18,15 @@ createApp({
         const availableBlocks = ref([]);
         const availableTomos = ref([]);
 
+        // --- LEIS (As 4 Leis) State ---
+        const leisBlocks = ref([]);
+        const selectedLeiBlock = ref(null);
+        const leisLoading = ref(false);
+        const leisErrorMsg = ref('');
+
         // Configuration
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxBhC6K7BQ01gz4_5uvGyhVaxMHAMXUVW4im-FqtAiKoudZEhBN5ebyX93w0xmAAB2yPe3uT1PhwYn/pub?output=csv';
+        const LEIS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6pkB0ujNMhxo8ORrpX87kcrQ9B25VQcCn5K0PAyzmJOb1M1k62bXL0n1zoAbI8_9BhBVRctYfWbeB/pub?output=csv';
 
         // Static Descriptions Database
         const descriptionsDB = {
@@ -101,13 +108,31 @@ createApp({
             window.scrollTo(0, 0);
         }
 
+        // --- LEIS Logic ---
+        function openLeiBlock(block) {
+            selectedLeiBlock.value = block;
+            currentView.value = 'leis_detalhe';
+            window.scrollTo(0, 0);
+        }
+
         function isPositive(mpValue) {
             if (!mpValue) return false;
             const v = mpValue.toLowerCase().trim();
             return v === 'm';
         }
 
-        // Data Fetching
+        function formatLeiTitleHtml(title) {
+            if (!title) return '';
+            let html = title;
+            // Replace arrows with icons
+            // ↑ for UP (Elevação)
+            html = html.replace(/↑/g, '<i class="fa-solid fa-arrow-up text-green-400 ml-2"></i>');
+            // ↓ for DOWN (Queda/Baixo)
+            html = html.replace(/↓/g, '<i class="fa-solid fa-arrow-down text-red-400 ml-2"></i>');
+            return html;
+        }
+
+        // Data Fetching: Mandamentos
         async function fetchData() {
             loading.value = true;
             errorMsg.value = '';
@@ -156,7 +181,6 @@ createApp({
                 };
 
                 // Identificadores e Títulos
-                // Separamos ID numérico de Título (descrição curta)
                 const rawId = getVal(['n° do mandamento', 'id', 'numero', 'nº do mandamento', 'nº', 'ordem']);
                 const rawTitle = getVal(['mandamento', 'titulo', 'nome', 'descrição', 'assunto']);
                 
@@ -178,7 +202,7 @@ createApp({
                 const block = getVal(['bloco', 'categoria', 'assunto', 'tema', 'classificação']);
                 const tomo = getVal(['tomo', 'livro (rambam)', 'seção', 'secao']);
 
-                // Campos estruturais usados no cabeçalho do card/detalhe (não repetir no corpo)
+                // Campos estruturais usados no cabeçalho
                 const headerKeys = [
                     'n° do mandamento', 'id', 'numero', 'nº do mandamento', 'mandamento', 'nº',
                     'n° geral', 'numero geral', 'nº geral', 'nr geral', 'geral', 'ordem',
@@ -194,12 +218,10 @@ createApp({
                     'referência', 'livro bíblia', 'ref', 'livro biblia', 'sefer', 'referencia', 'citação', 'citacao'
                 ];
 
-                // Campos a esconder na LISTA mas mostrar no DETALHE
                 const hiddenInListKeys = [
                     'comentario', 'comentário', 'brit hadasha', 'brit', 'brit_hadasha', 'novo testamento'
                 ];
 
-                // Conteúdo completo (para o detalhe)
                 const detailContent = keys
                     .filter(k => !headerKeys.includes(normalize(k)) && row[k]) 
                     .map(k => ({
@@ -207,7 +229,6 @@ createApp({
                         value: row[k]
                     }));
 
-                // Conteúdo resumido (para a lista)
                 const listContent = detailContent.filter(item => 
                     !hiddenInListKeys.includes(normalize(item.label))
                 );
@@ -221,12 +242,10 @@ createApp({
                     an: an || '-',
                     quem: quem || '-',
                     onde: onde || '-',
-                    
                     ref_livro: ref_livro || '',
                     ref_text: ref_text || '',
                     ref_cap: ref_cap || '',
                     ref_ver: ref_ver || '',
-
                     block: block ? block.trim() : 'Outros',
                     tomo: tomo ? tomo.trim() : 'Geral',
                     content: listContent,
@@ -251,6 +270,132 @@ createApp({
             }));
             
             if (currentView.value === 'graficos') renderCharts();
+        }
+
+        // Data Fetching: Leis
+        async function fetchLeisData() {
+            leisLoading.value = true;
+            leisErrorMsg.value = '';
+            
+            try {
+                // Cache bust
+                const response = await fetch(LEIS_CSV_URL + '&t=' + Date.now());
+                if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
+                
+                const csvText = await response.text();
+                
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        try {
+                            if (results.data && results.data.length > 0) {
+                                processLeisData(results.data);
+                            } else {
+                                leisErrorMsg.value = 'A planilha de Leis está vazia ou não pôde ser lida.';
+                            }
+                        } catch (e) {
+                            console.error("Erro no processamento de Leis:", e);
+                            leisErrorMsg.value = 'Erro ao estruturar dados: ' + e.message;
+                        } finally {
+                            leisLoading.value = false;
+                        }
+                    },
+                    error: function(err) {
+                        console.error("Erro CSV Leis:", err);
+                        leisErrorMsg.value = 'Erro ao processar Leis: ' + err.message;
+                        leisLoading.value = false;
+                    }
+                });
+            } catch (error) {
+                console.error("Erro Fetch Leis:", error);
+                leisErrorMsg.value = 'Falha ao carregar Leis: ' + error.message;
+                leisLoading.value = false;
+            }
+        }
+
+        function processLeisData(data) {
+            // Robust normalization for header matching
+            const normalize = str => {
+                if (!str) return '';
+                return str.toString()
+                          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                          .toLowerCase()
+                          .replace(/&/g, 'e') 
+                          .replace(/\+/g, 'e')
+                          .replace(/['"´`]/g, '') // Removes quotes for D'us -> dus
+                          .replace(/[^a-z0-9]/g, "");
+            };
+
+            const blocks = [];
+            
+            if (data.length > 0) {
+                const csvKeys = Object.keys(data[0]);
+                
+                // Identify Column D (index 3) for Title
+                // Safe access in case sheet is smaller, though unlikely for this task
+                const titleKey = csvKeys.length > 3 ? csvKeys[3] : null;
+                
+                // Themes expected by the user (Display Titles)
+                const targetThemes = [
+                    "D'us", "Leis", "Sinais & Simbolos", "Orações", "Amor", "Gentios", 
+                    "Família", "Relações Proíbidas", "Dias Santos", "Alimentação", 
+                    "Dignidade", "Servos", "Promessas", "Shemitá e Jubileu", "Tribunal", 
+                    "Prejuizos", "Propriedade", "Crimes", "Castigo/Restituição", 
+                    "Profecia", "Idolatria", "Agricultura", "Roupas", "Primogênito", 
+                    "Levitas", "Ofertas", "Templo", "Sacrifícios", "Pureza", 
+                    "Lepra", "Rei", "Nazireu", "Guerras"
+                ];
+
+                targetThemes.forEach(themeDisplay => {
+                    const themeKeyNorm = normalize(themeDisplay);
+                    
+                    // Find matching key in CSV headers using robust matching
+                    const exactKey = csvKeys.find(k => {
+                        const kNorm = normalize(k);
+                        return kNorm === themeKeyNorm || 
+                               (kNorm.includes(themeKeyNorm) && themeKeyNorm.length > 3) ||
+                               (themeKeyNorm.includes(kNorm) && kNorm.length > 3);
+                    });
+
+                    if (exactKey) {
+                        // Collect rows for this column
+                        const rows = [];
+                        data.forEach(row => {
+                            const val = row[exactKey];
+                            // Capture the Title from Column D for this specific row
+                            const titleVal = titleKey ? row[titleKey] : '';
+
+                            if (val && typeof val === 'string' && val.trim().length > 0) {
+                                rows.push({ 
+                                    title: titleVal ? titleVal.trim() : '',
+                                    content: [{
+                                        label: 'Ensino',
+                                        value: val.trim(),
+                                        showLabel: false,
+                                        isRef: false
+                                    }]
+                                });
+                            }
+                        });
+
+                        if (rows.length > 0) {
+                            blocks.push({
+                                title: themeDisplay,
+                                rows: rows,
+                                count: rows.length
+                            });
+                        }
+                    }
+                });
+            }
+            
+            if (blocks.length === 0) {
+                const foundKeys = data.length > 0 ? Object.keys(data[0]).slice(0, 5).join(', ') + '...' : 'nenhuma';
+                leisErrorMsg.value = `Nenhum bloco de Lei foi encontrado. As colunas da planilha não corresponderam aos temas. Colunas detectadas: ${foundKeys}`;
+            } else {
+                leisBlocks.value = blocks;
+            }
         }
 
         // Charts Logic
@@ -345,7 +490,7 @@ createApp({
                         type: 'pie',
                         data: {
                             labels: ['Homens', 'Mulheres', 'Ambos'],
-                            datasets: [{
+                            datasets: [{ 
                                 data: [counts['Homens'], counts['Mulheres'], counts['Ambos']],
                                 backgroundColor: ['#3b82f6', '#ec4899', '#d4af37'],
                                 borderColor: '#ffffff',
@@ -384,7 +529,7 @@ createApp({
                         type: 'bar',
                         data: {
                             labels: sorted.map(i => i[0]),
-                            datasets: [{
+                            datasets: [{ 
                                 label: 'Mandamentos',
                                 data: sorted.map(i => i[1]),
                                 backgroundColor: 'rgba(16, 185, 129, 0.6)', // Emerald Green
@@ -414,6 +559,9 @@ createApp({
             if (newVal === 'lista' && commandments.value.length === 0 && !loading.value) {
                 fetchData();
             }
+            if (newVal === 'leis' && leisBlocks.value.length === 0 && !leisLoading.value) {
+                fetchLeisData();
+            }
         });
 
         onMounted(() => {
@@ -434,7 +582,14 @@ createApp({
             loading,
             errorMsg,
             fetchData,
-            isPositive
+            isPositive,
+            // Leis Exports
+            leisBlocks,
+            selectedLeiBlock,
+            openLeiBlock,
+            leisLoading,
+            leisErrorMsg,
+            formatLeiTitleHtml
         };
     }
 }).mount('#app');
