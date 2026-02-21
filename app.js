@@ -219,7 +219,8 @@ createApp({
                 ];
 
                 const hiddenInListKeys = [
-                    'comentario', 'comentário', 'brit hadasha', 'brit', 'brit_hadasha', 'novo testamento'
+                    'comentario', 'comentário', 'brit hadasha', 'brit', 'brit_hadasha', 'novo testamento',
+                    'comentario de rambam', 'comentário de rambam', 'comentario rambam', 'comentário rambam'
                 ];
 
                 const detailContent = keys
